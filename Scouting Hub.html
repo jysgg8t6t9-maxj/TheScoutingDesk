@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Scouting Desk: Player Portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   ROOT VARIABLES
+   ============================================================ */
+:root{
+  --ink:#16131A; --muted:#7C7682; --line:#E5E0E6; --paper:#F2F0F3;
+  --card:#FFFFFF; --pitch:#0E5C3E; --grey:#C2B8BC;
+  --wc-bg:#003380; --wc-gold:#FFC300; --wc-orange:#FF6B35;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;}
+body{background:var(--paper);color:var(--ink);font-family:"Inter",system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px;}
+.hidden{display:none !important;}
+button{font-family:inherit;cursor:pointer;}
+
+/* ============================================================
+   MAIN MASTHEAD
+   ============================================================ */
+.mast{padding:36px 0 22px;border-bottom:2px solid var(--ink);margin-bottom:26px;}
+.mast .eyebrow{font-family:"Oswald",sans-serif;text-transform:uppercase;letter-spacing:4px;font-size:12px;color:var(--pitch);margin:0 0 6px;}
+.mast h1{font-family:"Oswald",sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:1px;font-size:clamp(28px,5vw,44px);margin:0;line-height:1;}
+.mast .tag{color:var(--muted);font-size:15px;margin:10px 0 0;}
+.stats{display:flex;gap:26px;flex-wrap:wrap;margin-top:16px;}
+.stat .n{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:22px;}
+.stat .l{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+
+/* ============================================================
+   FILTER BARS
+   -- mainFilters: All | Featured | Positions | World Cup
+   -- posFilters: Back | Full-back (2) | Winger (2) | etc.
+   Both share the same .filters class for layout
+   ============================================================ */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px;}
+.filters button{
+  background:var(--card);border:1px solid var(--line);border-radius:30px;
+  padding:7px 15px;font-size:13px;color:var(--ink);transition:.15s;white-space:nowrap;
+}
+.filters button:hover{border-color:var(--ink);}
+.filters button.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+.filters button.wc-btn{
+  background:var(--wc-bg);color:var(--wc-gold);border-color:var(--wc-bg);
+  font-weight:700;letter-spacing:.5px;
+}
+.filters button.wc-btn:hover{background:#004BB8;}
+.filters button.back-btn{background:#F5F0F2;border-color:var(--line);font-weight:600;}
+
+/* ============================================================
+   BOARD GRID (shared by main board and world cup board)
+   ============================================================ */
+.board{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(270px,1fr));
+  gap:18px;padding-bottom:50px;
+}
+
+/* ============================================================
+   PLAYER CARDS
+   ============================================================ */
+.pcard{
+  background:var(--card);border:1px solid var(--line);border-radius:8px;
+  overflow:hidden;text-align:left;padding:0;transition:.18s;
+  display:flex;flex-direction:column;
+}
+.pcard:hover{transform:translateY(-3px);box-shadow:0 16px 34px -22px rgba(20,8,16,.5);border-color:var(--c,#999);}
+.pcard .top{padding:16px 18px;color:#fff;position:relative;overflow:hidden;}
+.pcard .ghost{
+  position:absolute;right:-6px;top:-26px;
+  font-family:"Oswald",sans-serif;font-weight:700;font-size:110px;
+  line-height:1;color:rgba(0,0,0,.15);
+}
+.pcard .club{position:relative;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;opacity:.85;}
+.pcard .nm{position:relative;font-family:"Oswald",sans-serif;font-weight:600;font-size:23px;line-height:1.05;text-transform:uppercase;margin-top:3px;}
+.pcard .sub{position:relative;font-size:12.5px;opacity:.9;margin-top:6px;}
+.pcard .body{padding:14px 18px 16px;flex:1;display:flex;flex-direction:column;gap:12px;}
+.pcard .vt{font-size:13.5px;color:#34303a;line-height:1.45;}
+.pcard .badge{
+  align-self:flex-start;margin-top:auto;
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:600;
+  background:#F1EEF2;border-radius:5px;padding:5px 9px;
+}
+.pcard .badge b{color:var(--c,#333);}
+
+/* Featured star badge */
+.pcard .feat-star{
+  position:absolute;top:12px;right:12px;
+  background:var(--wc-gold);color:#1A1200;border-radius:50%;
+  width:22px;height:22px;display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:bold;line-height:1;
+}
+
+/* ============================================================
+   ADD NEXT TILE
+   ============================================================ */
+.addtile{
+  border:1.5px dashed var(--line);border-radius:8px;display:flex;
+  flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:30px 18px;color:var(--muted);min-height:200px;
+}
+.addtile .plus{font-family:"Oswald",sans-serif;font-size:34px;color:var(--line);}
+.addtile p{margin:10px 0 0;font-size:13px;max-width:200px;}
+
+/* ============================================================
+   WORLD CUP VIEW
+   ============================================================ */
+.wc-view{padding-bottom:50px;}
+
+/* Vibrant World Cup header banner */
+.wc-banner{
+  position:relative;background:var(--wc-bg);overflow:hidden;
+  border-radius:8px;margin-bottom:22px;
+  padding:30px 24px 24px;color:#fff;
+}
+/* Gold-to-orange shimmer stripe at the very top */
+.wc-banner::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:5px;
+  background:linear-gradient(90deg,#FFC300 0%,#FF6B35 50%,#FFC300 100%);
+}
+/* Decorative glowing circles in the background */
+.wc-banner::after{
+  content:'';position:absolute;top:-60px;right:-60px;
+  width:240px;height:240px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,195,0,.18) 0%,transparent 70%);
+  pointer-events:none;
+}
+.wc-deco{
+  position:absolute;bottom:-40px;left:20%;
+  width:160px;height:160px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,107,53,.14) 0%,transparent 70%);
+  pointer-events:none;
+}
+.wc-ghost{
+  position:absolute;right:18px;bottom:-18px;
+  font-family:"Oswald",sans-serif;font-weight:700;
+  font-size:110px;line-height:1;
+  color:rgba(255,195,0,.10);letter-spacing:-4px;
+  pointer-events:none;user-select:none;
+}
+.wc-eyebrow{
+  font-family:"Oswald",sans-serif;font-weight:500;
+  letter-spacing:4px;font-size:11px;color:var(--wc-gold);
+  text-transform:uppercase;margin:0 0 8px;position:relative;
+}
+.wc-title{
+  font-family:"Oswald",sans-serif;font-weight:700;
+  font-size:clamp(34px,7vw,56px);line-height:.95;
+  text-transform:uppercase;letter-spacing:.5px;
+  color:#fff;margin:0;position:relative;
+}
+.wc-title span{color:var(--wc-gold);}
+.wc-sub{
+  font-size:13.5px;color:rgba(255,255,255,.75);
+  margin-top:12px;position:relative;
+}
+.wc-meta{
+  display:flex;gap:20px;flex-wrap:wrap;
+  margin-top:16px;position:relative;
+}
+.wc-stat .n{
+  font-family:"IBM Plex Mono",monospace;font-weight:600;
+  font-size:20px;color:var(--wc-gold);
+}
+.wc-stat .l{
+  font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
+  color:rgba(255,255,255,.6);
+}
+.wc-back{
+  background:none;border:1px solid rgba(255,255,255,.25);
+  border-radius:30px;padding:8px 16px;font-size:13px;
+  color:rgba(255,255,255,.8);margin-top:16px;display:inline-block;
+  position:relative;transition:.15s;
+}
+.wc-back:hover{border-color:var(--wc-gold);color:var(--wc-gold);}
+/*   <!-- ═══ COMPARISON VIEW ═════════════════════════════════════════ -->
+  <div id="compareView" class="hidden">
+    <button class="backbtn" onclick="closeCompare()">&#8592; Back to Board</button>
+    function showComparison(id1, id2) {
+    const p1 = REPORTS.find(r => r.id === id1);
+    const p2 = REPORTS.find(r => r.id === id2);
+    if (!p1 || !p2) return;
+
+    // Get metrics for each player
+    // If universalMetrics exists, use those for a standardised comparison
+    // Otherwise fall back to their position-specific metrics (pct values only)
+    function getCompareMetrics(p) {
+      if (p.universalMetrics) {
+        const labels = {
+          goalInvolvement: 'Goal Involvement', progressiveActions: 'Progressive Actions',
+          duelWins: 'Duels Won', xGxA: 'xG + xA', shots: 'Shots', distance: 'Distance'
+        };
+        return Object.entries(p.universalMetrics).map(([k,v]) => ({
+          label: labels[k] || k, per90: v.value, pct: v.pct
+        }));
+      }
+      return p.percentiles;
+    }
+
+    const m1 = getCompareMetrics(p1);
+    const m2 = getCompareMetrics(p2);
+    const maxRows = Math.max(m1.length, m2.length);
+
+    function playerCol(p, metrics) {
+      const bars = metrics.map(m => `
+        <div style="margin:10px 0;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+            <span style="font-weight:600;">${esc(m.label)}</span>
+            <span style="font-family:monospace;font-weight:700;color:#1565C0;">${m.pct}</span>
+          </div>
+          <div style="background:#EFEAEC;border-radius:3px;height:12px;overflow:hidden;">
+            <div style="width:${m.pct}%;height:12px;border-radius:3px;
+              background:${m.pct>=80?'#1565C0':m.pct>=50?'#822D3A':'#A0968C'};
+              transition:width .9s cubic-bezier(.22,1,.36,1);"></div>
+          </div>
+          <div style="font-size:10px;color:#9E9E9E;margin-top:2px;">${m.per90} per 90</div>
+        </div>`).join('');
+      return `
+        <div style="flex:1;background:#fff;border-radius:6px;padding:18px;border:1px solid #E5E0E6;">
+          <div style="background:${p.theme.claret};color:#fff;padding:12px 16px;border-radius:4px;margin-bottom:16px;">
+            <div style="font-size:10px;opacity:.8;">${esc(p.club)}</div>
+            <div style="font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;text-transform:uppercase;">${esc(p.name)}</div>
+            <div style="font-size:11px;opacity:.85;">${esc(p.meta.Position)} &middot; Age ${esc(p.meta.Age)}</div>
+          </div>
+          ${bars}
+          <button onclick="showReport('${p.id}','board')"
+            style="width:100%;margin-top:12px;padding:8px;background:${p.theme.claret};
+                   color:#fff;border:none;border-radius:4px;font-size:12px;cursor:pointer;">
+            Full Report
+          </button>
+        </div>`;
+    }
+
+    document.getElementById('compareContent').innerHTML = `
+      <h2 style="font-family:'Oswald',sans-serif;font-size:28px;text-transform:uppercase;margin:0 0 8px;">
+        Comparison
+      </h2>
+      <p style="color:#7C7682;font-size:13px;margin:0 0 20px;">
+        ${p1.universalMetrics && p2.universalMetrics
+          ? 'Universal metrics — directly comparable across positions.'
+          : 'Position-specific percentile ranks. Scale is 0-100 in all cases.'}
+      </p>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;">
+        ${playerCol(p1, m1)}
+        ${playerCol(p2, m2)}
+      </div>`;
+
+    document.getElementById('boardView').classList.add('hidden');
+    document.getElementById('compareView').classList.remove('hidden');
+    closeCompare();
+    window.scrollTo(0,0);
+  }
+    <div id="compareContent"></div>
+  </div>
+
+/* ============================================================
+   REPORT DETAIL VIEW
+   (same styles as before, shared between main and WC reports)
+   ============================================================ */
+.report-view{padding:18px 0 60px;}
+.backbtn{
+  background:none;border:1px solid var(--line);border-radius:30px;
+  padding:8px 16px;font-size:13px;color:var(--ink);margin-bottom:18px;
+}
+.backbtn:hover{border-color:var(--ink);}
+.report{background:var(--card);border:1px solid var(--line);border-radius:6px;overflow:hidden;box-shadow:0 18px 50px -30px rgba(40,10,20,.4);}
+.np{position:relative;background:var(--claret);color:#fff;padding:20px 22px;overflow:hidden;border-radius:5px 5px 0 0;}
+.np-ghost{position:absolute;right:6px;top:-38px;font-family:"Oswald",sans-serif;font-weight:700;font-size:150px;line-height:1;color:rgba(255,255,255,.08);letter-spacing:-8px;pointer-events:none;}
+.eb{text-transform:uppercase;letter-spacing:2.5px;font-size:8px;color:var(--blue);margin-bottom:4px;}
+.np h2{font-family:"Oswald",sans-serif;font-weight:700;font-size:clamp(30px,5.5vw,50px);line-height:.98;margin:0;text-transform:uppercase;letter-spacing:.5px;}
+.np-meta{display:flex;flex-wrap:wrap;gap:5px 16px;margin-top:14px;font-size:13px;color:rgba(255,255,255,.86);}
+.np-meta b{color:#fff;font-weight:600;}.np-meta .dot{color:var(--blue);}
+.np-right{display:flex;flex-direction:column;gap:13px;align-items:flex-end;justify-content:center;}
+.chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-start;margin-top:14px;}
+.chip{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16);border-radius:4px;padding:6px 11px;}
+.chip .k{display:block;font-size:9.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--blue);}
+.chip .v{display:block;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:14px;color:#fff;margin-top:2px;}
+.pitch-wrap{width:250px;}
+.pitch-cap{font-size:8px;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,.7);margin-top:3px;}
+.np-grid{position:relative;display:flex;gap:26px;justify-content:space-between;flex-wrap:wrap;}
+.np-left{min-width:240px;flex:1;}
+.verdict-block{background:#fff;border:1px solid #E7DFE2;border-top:none;border-left:4px solid var(--claret);padding:14px 20px;}
+.verdict-block .eb2{text-transform:uppercase;letter-spacing:2px;font-size:8px;color:var(--claret);margin-bottom:3px;}
+.verdict-block p{margin:2px 0 0;font-size:15px;font-weight:600;line-height:1.45;}
+.block{background:#fff;border:1px solid #E7DFE2;border-top:none;padding:12px 20px;}
+.eb2{text-transform:uppercase;letter-spacing:2px;font-size:8px;color:var(--claret);margin-bottom:3px;}
+.bt{font-family:"Oswald",sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.5px;font-size:16px;margin-bottom:10px;}
+.lede{font-size:13px;color:#34272c;line-height:1.6;}
+.legend{display:flex;gap:18px;flex-wrap:wrap;margin:0 0 12px;font-size:11px;color:var(--muted);}
+.legend span{display:inline-flex;align-items:center;gap:5px;}
+.legend i{width:9px;height:9px;border-radius:2px;display:inline-block;}
+.bar{display:grid;grid-template-columns:170px 1fr 48px;align-items:center;gap:12px;margin:8px 0;}
+.bar-label{font-size:12px;font-weight:500;}
+.bar-label small{display:block;font-family:"IBM Plex Mono",monospace;color:var(--muted);font-size:10px;margin-top:1px;}
+.track{background:#EFEAEC;border-radius:3px;height:13px;overflow:hidden;}
+.fill{height:100%;width:0;border-radius:3px;transition:width .9s cubic-bezier(.22,1,.36,1);}
+.pct{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:16px;text-align:right;}
+.pct small{font-size:9px;color:var(--muted);}
+.rates{display:flex;gap:26px;flex-wrap:wrap;margin-top:10px;}
+.rate{flex:1;min-width:160px;}
+.rate-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;}
+.rate-top .lab{font-size:12px;font-weight:500;}
+.rate-top .num{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:16px;}
+.rate-track{background:#EFEAEC;border-radius:3px;height:9px;overflow:hidden;}
+.rate-fill{height:9px;width:0;border-radius:3px;background:var(--muted);transition:width .9s cubic-bezier(.22,1,.36,1);}
+.note{font-size:10px;color:var(--muted);margin-top:10px;}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:26px;}
+.col h4{font-family:"Oswald",sans-serif;text-transform:uppercase;letter-spacing:1px;font-size:12px;margin:0 0 8px;}
+.col.s h4{color:var(--blue);}.col.w h4{color:var(--claret);}
+.col ul{list-style:none;margin:0;padding:0;}
+.col li{position:relative;padding-left:14px;margin-bottom:8px;font-size:12.5px;line-height:1.5;}
+.col.s li:before{content:"+";position:absolute;left:0;color:var(--blue);font-weight:bold;}
+.col.w li:before{content:"\2013";position:absolute;left:0;color:var(--claret);font-weight:bold;}
+.callout{background:#FBF7F4;border:1px solid #E7DFE2;border-radius:4px;padding:12px 14px;}
+.callout p{margin:0;font-size:12px;color:#34272c;line-height:1.6;}
+.foot-r{border:1px solid #E7DFE2;border-top:none;border-radius:0 0 6px 6px;background:#FBF9F8;padding:12px 20px;font-size:10px;color:var(--muted);}
+.foot-r .method{color:var(--claret);font-weight:600;margin-bottom:8px;font-size:10.5px;}
+.foot-r .fr{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.foot-r b{color:#4a3b40;}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media(max-width:600px){
+  .np,.verdict-block,.block,.foot-r{padding-left:16px;padding-right:16px;}
+  .np-ghost{font-size:110px;}
+  .bar{grid-template-columns:120px 1fr 44px;gap:8px;}
+  .cols{grid-template-columns:1fr;gap:16px;}
+  .np-right{align-items:flex-start;}
+  .pitch-wrap{width:100%;}
+  .wc-banner{border-radius:6px;padding:24px 18px 20px;}
+  .wc-back{margin-top:12px;}
+}
+@media print{
+    body{background:#fff;}
+    #boardView,#worldCupView,#compareView,
+    .backbtn,.export-btn,#searchInput,
+    .filters,#mainFilters,#posFilters,
+    .wc-banner,input{display:none!important;}
+    .report-view{padding:0;}
+    .wrap{padding:0;max-width:none;}
+    .report{box-shadow:none;border:none;border-radius:0;}
+    .block,.verdict-block,.foot-r{break-inside:avoid;}
+    .np{border-radius:0;}
+    .fill{transition:none;}
+  }
+@media(prefers-reduced-motion:reduce){.fill,.rate-fill,.pcard{transition:none;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ═══ MAIN BOARD VIEW ══════════════════════════════════════════ -->
+  <div id="boardView">
+    <header class="mast">
+      <p class="eyebrow" id="siteEyebrow"></p>
+      <h1 id="siteName"></h1>
+      <p class="tag" id="siteTag"></p>
+      <div class="stats" id="siteStats"></div>
+    </header>
+
+    <!--
+      MAIN FILTER BAR (All / Featured / Positions / World Cup)
+      This is always visible unless the Positions submenu is open.
+    -->
+      <div style="margin-bottom:14px;">
+    <input
+      id="searchInput"
+      type="text"
+      placeholder="Search players, clubs, leagues..."
+      oninput="handleSearch(this.value)"
+      style="width:100%;padding:10px 16px;border:1px solid #E5E0E6;
+             border-radius:30px;font-size:14px;font-family:'Inter',sans-serif;
+             background:#fff;outline:none;color:#16131A;">
+              </div>
+    <div class="filters" id="mainFilters"></div>
+
+    <!--
+      POSITIONS SUBMENU (Back / Full-back(2) / Winger(2) / etc.)
+      Hidden by default. Shown when user taps "Positions".
+      Auto-populated from posGroup values in your REPORTS array.
+    -->
+    <div class="filters hidden" id="posFilters"></div>
+
+    <!-- Player card grid -->
+    <div class="board" id="board"></div>
+  </div>
+
+  <!-- ═══ WORLD CUP VIEW ══════════════════════════════════════════ -->
+  <div id="worldCupView" class="hidden wc-view">
+
+    <!--
+      VIBRANT WORLD CUP BANNER
+      Edit wc-title, wc-sub text below to customise the header.
+    -->
+    <div class="wc-banner">
+      <div class="wc-deco"></div>
+      <div class="wc-ghost">26</div>
+      <p class="wc-eyebrow">The Scouting Desk</p>
+      <h2 class="wc-title">World Cup <span>2026</span></h2>
+      <p class="wc-sub">Tournament player profiles and recruitment analysis</p>
+      <div class="wc-meta" id="wcMeta"></div>
+      <button class="wc-back" onclick="showBoard()">&#8592; Back to Main Board</button>
+    </div>
+
+    <!-- World Cup player card grid -->
+    <div class="board" id="wcBoard"></div>
+  </div>
+
+  <!-- ═══ COMPARISON VIEW ════════════════════════════════════════ -->
+  <div id="compareView" class="hidden">
+    <button class="backbtn" onclick="closeCompare()">&#8592; Back to Board</button>
+    <div id="compareContent"></div>
+  </div>
+
+  <!-- ═══ REPORT DETAIL VIEW ══════════════════════════════════════ -->
+  <div id="reportView" class="report-view hidden">
+    <!--
+      The back button destination is controlled by reportOrigin.
+      If you opened this report from the WC board it goes back there.
+      If from the main board it goes back there.
+    -->
+    <button class="backbtn" id="backBtn" onclick="goBack()">&#8592; Back</button>
+    <button class="backbtn export-btn"
+    onclick="printReport()"
+    style="margin-left:8px;background:#16131A;color:#fff;border-color:#16131A;">
+    &#8595; Export PDF
+  </button>
+    <div class="report" id="report"></div>
+  </div>
+
+</div><!-- /.wrap -->
+
+<script>
+/* ════════════════════════════════════════════════════════════════════
+   ▼▼▼  SECTION 1: SITE BRANDING
+   Edit the four values below to update your brand across the hub.
+   ════════════════════════════════════════════════════════════════════ */
+const SITE = {
+  eyebrow: 'Independent Scouting',
+  name:    'The Scouting Desk',
+  tagline: 'Player analysis, profiles and recruitment notes.',
+  author:  'Ben Martin',
+};
+
+/* ════════════════════════════════════════════════════════════════════
+   ▼▼▼  SECTION 2: REPORTS ARRAY
+   HOW TO ADD A PLAYER:
+     1. Copy one full { ... } block below.
+     2. Paste it AFTER the last player's closing }, with a comma between.
+     3. Fill in the values. The four NEW fields are explained here:
+
+   featured:   true  → Player appears on the "Featured" board.
+               false → Player is hidden from Featured (still in All).
+
+   worldCup:   true  → Player appears in the World Cup section.
+               false → Player does not appear in World Cup section.
+
+   dateAdded:  "YYYY-MM-DD" → Controls order on the World Cup board.
+               Newest date = top of the board. Use today's date when
+               you add a World Cup player.
+               Set to null for non-World Cup players.
+
+   HOW THE POSITIONS FILTER WORKS:
+     The hub reads the posGroup value from every report and auto-builds
+     the Positions submenu. You do not need to configure positions.
+     Just use a consistent posGroup string (e.g. "Full-back") and the
+     button appears automatically with the correct count.
+
+   COLOUR THEMING:
+     theme.claret = the dominant banner colour (use club or nation hex).
+     theme.blue   = the accent colour for labels and highlights.
+   ════════════════════════════════════════════════════════════════════ */
+const REPORTS = [
+{
+  id: 'diouf',
+  /* ── 3 FLAGS TO CONTROL WHERE THIS REPORT APPEARS ── */
+  featured:   false,          // set to true to pin to Featured board
+  worldCup:   false,          // set to true to show on World Cup board
+  dateAdded:  "2026-06-16",           // "YYYY-MM-DD" for World Cup reports only
+
+  name: 'El Hadji Malick Diouf',
+  club: 'West Ham United',
+  league: 'Premier League',
+  posGroup: 'Full-back',      // controls Positions filter button
+  number: 12,
+  positions: ['LB','LWB'],
+  theme: { claret:'#7A263A', blue:'#1CA4DA' },
+
+  meta: { Position:'Left-back / Left wing-back', Age:'21', Foot:'Left', Nationality:'Senegal', Born:'28 Dec 2004' },
+  chips: [ {k:'Market value',v:'€28.0m'}, {k:'Fee',v:'€22m + €4m'}, {k:'Contract',v:'to 2030'} ],
+
+  verdict: 'A high-ceiling attacking left-back whose elite ball progression and final-third output have already translated to the Premier League at just 21. His defensive duelling is where the work remains, and it is also where the risk sits.',
+  role: 'A modern left-back and wing-back in the overlapping, ball-carrying mould. He lives high and wide, takes the ball in advanced areas and drives at defenders rather than sitting in to anchor the back line. Left-footed and athletic, he is at his most dangerous as a creator down the flank. He models his game on Marcelo, and the numbers back that up.',
+
+  percentiles: [
+    { label:'Touches in att. box',   per90:'3.31', pct:96 },
+    { label:'Prog. passes received', per90:'8.43', pct:95 },
+    { label:'Progressive passes',    per90:'6.77', pct:95 },
+    { label:'Progressive carries',   per90:'3.31', pct:90 },
+    { label:'Successful take-ons',   per90:'1.51', pct:93 },
+  ],
+  percentileNote: 'Per 90, measured against full-back peers, from Diouf\'s pre-move sample (domestic league plus UEFA competition). Read it as a strong signal rather than a final grade.',
+  rates: [ {label:'Aerial duels won',pct:66}, {label:'Ground duels won',pct:50} ],
+
+  strengths: [
+    'Elite ball progression, with passes and carries both in the top 10% of full-backs.',
+    'A constant presence in the final third, ranking in the top 5% for box touches and progressive receptions.',
+    'Beats his man regularly; his 93rd-percentile take-on volume gives a genuine one-v-one threat down the left.',
+    'His creative output has survived the step up, chipping in Premier League assists for a bottom-third side.',
+  ],
+  weaknesses: [
+    'Ground-duel reliability sits around 50%, which leaves him exploitable one-v-one defensively.',
+    'The defensive solidity expected of a Premier League starter is still developing.',
+    'His end product is creation rather than finishing, so he offers little goal threat from the position.',
+  ],
+  callout: { title:'Level jump and validation', body:'The percentile profile was built largely in the Czech First League and European competition, a clear step below the Premier League, so it always had to be read as a signal rather than a grade. This season at West Ham, with roughly 30 starts and five assists for a bottom-third side, that creative output has carried over, and national coverage has already labelled him an under-the-radar transfer hit. The projection held up.' },
+  projection: { title:'Projection and risk', body:'The trajectory is strong. He already has elite attacking traits at 21, and defending, which tends to be the most coachable and latest-maturing part of a full-back\'s game, is upside still to come. The main risk is a system that exposes him one-v-one before that defensive side matures. He fits best in a possession-dominant, high-line side that defends the flank as a unit.' },
+  sources: ['FBref / Opta','Transfermarkt','ESPN and Premier League','West Ham United official'],
+  generated: '16 June 2026',
+},
+{
+  id: 'irankunda',
+  /* ── FLAGS ── */
+  featured:   true,           // ← Irankunda appears on Featured board
+  worldCup:   false,
+  dateAdded:  "2026-06-17",
+
+  name: 'Nestory Irankunda',
+  club: 'Watford',
+  league: 'Championship',
+  posGroup: 'Winger',
+  number: 7,
+  positions: ['RW','LW'],
+  theme: { claret:'#F2C300', blue:'#1A1A1A' },
+
+  meta: { Position:'Right Wing / Left Wing', Age:'20', Foot:'Right', Nationality:'Australia', Born:'09 Feb 2006' },
+  chips: [ {k:'Market value',v:'€8.0m'}, {k:'Fee',v:'€3.5m'}, {k:'Contract',v:'to 2028'} ],
+
+  verdict: 'An explosive, high upside winger who consistently beats defenders, generates shots at elite volume, and possesses the athletic tools to become a top-level transition threat.',
+  role: 'Best suited as an inverted left winger in a vertical, transition-focused attack, where he can isolate full-backs, drive inside onto his stronger foot, and attack the penalty area. Thrives when given freedom to carry the ball aggressively and create danger through dribbling and direct running rather than acting as a possession-based creator.',
+
+  percentiles: [
+    { label:'Successful Dribbles', per90:'2.22', pct:99 },
+    { label:'Shots',               per90:'3.01', pct:98 },
+    { label:'Dribbles Attempted',  per90:'4.17', pct:97 },
+    { label:'Shots on Target',     per90:'1.11', pct:95 },
+    { label:'Key Passes',          per90:'1.55', pct:88 },
+  ],
+  percentileNote: 'Per 90, vs Winger peers in EFL Championship 25/26.',
+  rates: [],
+
+  strengths: [
+    'Elite 1v1 dribbling: consistently beats his defenders with pace, power, and close control.',
+    'Direct goal threat: generates a high volume of shots and regularly attacks dangerous areas.',
+    'Explosive athleticism: exceptional acceleration and top-end speed allow him to create chances.',
+  ],
+  weaknesses: [
+    'Final ball consistency: can improve the quality and decision-making of his final product.',
+    'Decision-making in possession: sometimes opts for the difficult action when a simpler pass is available.',
+    'Defensive contribution: needs greater consistency in tracking runners and pressing triggers.',
+  ],
+  callout: { title:'Is the hype real?', body:'While Irankunda\'s underlying numbers are among the best for Championship wingers, the hype must be read alongside the level. The Championship is a physical division that rewards directness, and his numbers partly reflect that environment. However, a 99th-percentile dribble success rate and elite shot volume at 20 years old in any professional league is a genuine signal. The question is whether his decision-making and technical consistency can sustain at a higher level, which only a step up will answer.' },
+  projection: { title:'Projection and risk', body:'The ceiling is a dependable top-flight winger with pace and directness as his primary tools. The risk is that his game is built around speed and athleticism, which are more dominant at Championship level than in the Premier League. If his technical quality and decision-making do not catch up to his physicality, he risks becoming a frustrating talent who never quite delivers on the underlying numbers.' },
+  sources: ['FBref / Opta','Transfermarkt','EFL Championship data'],
+  generated: '17 June 2026',
+},
+{
+  id: 'van_hecke',
+  /* ── 3 FLAGS TO CONTROL WHERE THIS REPORT APPEARS ── */
+  featured:   false,          // set to true to pin to Featured board
+  worldCup:   false,          // set to true to show on World Cup board
+  dateAdded:  "2026-06-18",           // "YYYY-MM-DD" for World Cup reports only
+
+  name: 'Jan Paul Van Hecke',
+  club: 'Brighton & Hove Albion',
+  league: 'Premier League',
+  posGroup: 'Centre Back',      // controls Positions filter button
+  number: 12,
+  positions: ['CB'],
+  theme: { claret:'#132257', blue:'#008000' },
+
+  meta: { Position:'Centre Back', Age:'26', Foot:'Right', Nationality:'Netherlands', Born:'08 June 2000' },
+  chips: [ {k:'Market value',v:'€45.0m'}, {k:'Fee',v:'€52m'}, {k:'Contract',v:'to 2030'} ],
+
+  verdict: 'The most progressive centre-back in the Premier League and arguably in Europe. Van Hecke does not just play out from the back: he actively dismantles defensive blocks with carries and line-breaking passes that the vast majority of centre-backs cannot replicate. Brighton agreeing a deal for 52 million euros for a defender with one year left on his contract tells you everything about how the market rates him.',
+  role: 'Van Hecke operates as Brighton’s primary ball-carrier out of defense, functioning almost as a third midfielder in possession phases. His willingness to drive through pressure invites fouls and repositions the team higher up the pitch with little risk, because he is composed enough to come out the other side of a challenge. He starts deep and aggressive as a sweeper when out of possession, then morphs into a creative outlet the moment his side regains the ball. Roberto De Zerbi’s desire to reunite with him at Tottenham is no coincidence. The 3-4-3 and high-press systems that both coaches prefer are built around exactly his profile of ball-playing, press-resistant centre-back.',
+
+  percentiles: [
+    { label:'Progressive Carries', per90:'2.17', pct:99 },
+    { label:'Progressive Passes', per90:'6.70', pct:98 },
+    { label:'Passes into Final Third', per90:'7.28', pct:96 },
+    { label:'Fouls Drawn', per90:'1.11', pct:90 },
+    { label:'Defensive Duels Won', per90:'1.96', pct:78 },
+  ],
+  percentileNote: 'Defensive Duels won per 90 calculated from 70 duels won in 3,211 minutes (source: One-vs-One.com). Percentile reflects duel win rate ranking among PL centre-backs.',
+  rates: [],
+
+  strengths: [
+    'Elite Ball Progression out of defence: 99th percentile for progressive carries and 98th for progressive passes among Premier League centre-backs. No CB in the division drives forwards with the ball more effectively.',
+    'Dribbling intelligence under pressure: Van Hecke does not run at defenders, he feints through them. His ability to draw fouls in his own half resets phases and adds territory with ball turnover risks.',
+  'Consistent at the highest level: 36 Premier League starts in 2025-26, 34 the season before. He is one of very few ball-playing CBs to translate the profile into sustained Premier League durability.',
+  ],
+  weaknesses: [
+    'Defensive duel win rate: A 62.5% ground duel success rate places him in the 78th percentile for a centre-back. When isolated one-vs-one in deeper positions his physical tools do not match his technical ones.',
+    'Aerial Reliability: Van Hecke is not a dominant aerial defender. His height is adequate but his heading is not a weapon. Set-piece vulnerability is a known risk in De Zerbi systems already.',
+    'Contract Leverage: Brighton lost him for 52 million euros despite Chelsea and Liverpool interest. He is a one-club man in terms of destination, which signals potential limitations in ambition or negotiating leverage at the next level.',
+  ],
+  callout: { title:'Is 52 million euros too much for a defender with one year left on his contract', body:'On the surface, paying 52 million euros for a player who could have signed for free in twelve months is hard to justify, and it is exactly the kind of deal that gets Premier League Directors sacked. But the context matters. Van Hecke was the single most progressive ball-carrying centre-back in the league last season, and the two clubs offering alternatives in Chelsea and Liverpool were also willing to pay that price. Brighton drove the fee by leaking interest, imposing a tight deadline, and exploiting Tottenham’s desperation for De Zerbi’s preferred system. The seagulls extracted a premium for a player in the final year of his deal, a masterclass in leverage rather than a fair reflection of footballing value. For Tottenham, the decision is really about whether the system requires him specifically, and De Zerbi’s track record of building teams around exactly this profile suggests it probably does.' },
+  projection: { title:'Projection and risk', body:'Van Hecke is 26 heading into the peak years of a centre-back\'s career, and the step up to a Champions League chasing club under the manager who built him is a reasonable bet on continued development. The risk is tactical dependency. His numbers are partly a product of Brighton\'s philosophy, and if Tottenham\'s system is less possession-dominated, the progression metrics could soften. Durability has been excellent, but a significant injury could expose the fact that he is more of a system player than an elite individual topper. The ceiling is a consistent top-ten European centre-back. The floor is a 52-million-euro squad player who works best in a specific system.' },
+  sources: ['FBref / Opta','Transfermarkt','DataMB via X @DataMB_','Total Football Analysis','One-Vs-One.com','Fotmob','Sky Sports and The Athletic'],
+  generated: '18 June 2026',
+}
+
+/* ── MAIN BOARD ─────────────────────────────────────────────────── */
+function renderBoard(){
+    let list;
+    if(activeFilter==='All'){
+      list = REPORTS;
+    } else if(activeFilter==='Featured'){
+      list = REPORTS.filter(p=>p.featured);
+    } else {
+      list = REPORTS.filter(p=>p.posGroup===activeFilter);
+    }
+
+    // Apply search filter on top of whichever section is active
+    if (searchQuery) {
+      list = list.filter(p =>
+        p.name.toLowerCase().includes(searchQuery) ||
+        p.club.toLowerCase().includes(searchQuery) ||
+        p.league.toLowerCase().includes(searchQuery) ||
+        p.posGroup.toLowerCase().includes(searchQuery) ||
+        (p.meta.Nationality && p.meta.Nationality.toLowerCase().includes(searchQuery))
+      );
+    }
+
+  const cards = list.map(p=>{
+    const t=topMetric(p);
+    const star = p.featured ? `<div class="feat-star">&#9733;</div>` : '';
+    return `<button class="pcard" style="--c:${p.theme.claret}" onclick="showReport('${p.id}','board')">
+      <div class="top" style="background:${p.theme.claret}">
+        ${star}
+        <span class="ghost">${p.number||''}</span>
+        <span class="club">${esc(p.club)}</span>
+        <div class="nm">${esc(p.name)}</div>
+        <div class="sub">${esc(p.meta.Position)} &middot; ${esc(p.meta.Age)}</div>
+      </div>
+      <div class="body">
+        <div class="vt">${esc(p.verdict.split('.')[0])}.</div>
+        <div class="badge"><b>${t.pct}th</b> pct &middot; ${esc(t.label)}</div>
+        <button
+    class="compare-trigger"
+    onclick="event.stopPropagation(); handleCompare('${p.id}')"
+    style="font-size:11px;background:none;border:1px solid var(--line);
+           border-radius:20px;padding:4px 10px;color:var(--muted);
+           margin-top:4px;cursor:pointer;width:100%;text-align:left;">
+    + Compare
+  </button>
+      </div>
+    </button>`;
+  }).join('');
+
+  const empty = list.length===0
+    ? `<div class="addtile"><div class="plus">&#9679;</div><p>No reports in this section yet.</p></div>`
+    : '';
+
+  const addTile = `<div class="addtile"><div class="plus">+</div><p>Your next report goes here. Add a new player block in the REPORTS array.</p></div>`;
+  document.getElementById('board').innerHTML = cards + empty + (activeFilter==='All' ? addTile : '');
+}
+
+/* ── WORLD CUP BOARD ────────────────────────────────────────────── */
+function renderWorldCupBoard(){
+  /* Sort by dateAdded newest first, null values go to the end */
+  const wcPlayers = REPORTS
+    .filter(p=>p.worldCup)
+    .sort((a,b)=>{
+      if(!a.dateAdded && !b.dateAdded) return 0;
+      if(!a.dateAdded) return 1;
+      if(!b.dateAdded) return -1;
+      return new Date(b.dateAdded) - new Date(a.dateAdded);
+    });
+
+  /* Update WC meta stats in the banner */
+  const nations = new Set(wcPlayers.map(p=>p.meta.Nationality));
+  document.getElementById('wcMeta').innerHTML = [
+    [wcPlayers.length,'Reports'],
+    [nations.size,'Nations'],
+  ].map(([n,l])=>`<div class="wc-stat"><div class="n">${n}</div><div class="l">${esc(l)}</div></div>`).join('');
+
+  const cards = wcPlayers.map(p=>{
+    const t=topMetric(p);
+    const dateLabel = p.dateAdded
+      ? new Date(p.dateAdded).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})
+      : '';
+    return `<button class="pcard" style="--c:${p.theme.claret}" onclick="showReport('${p.id}','worldcup')">
+      <div class="top" style="background:${p.theme.claret}">
+        <span class="ghost">${p.number||''}</span>
+        <span class="club">${esc(p.club)} &middot; ${esc(p.meta.Nationality)}</span>
+        <div class="nm">${esc(p.name)}</div>
+        <div class="sub">${esc(p.meta.Position)} &middot; Age ${esc(p.meta.Age)}</div>
+      </div>
+      <div class="body">
+        <div class="vt">${esc(p.verdict.split('.')[0])}.</div>
+        <div class="badge"><b>${t.pct}th</b> pct &middot; ${esc(t.label)}</div>
+        ${dateLabel ? `<div style="font-size:10.5px;color:var(--muted);margin-top:2px;">Added ${esc(dateLabel)}</div>` : ''}
+      </div>
+    </button>`;
+  }).join('');
+
+  const empty = wcPlayers.length===0
+    ? `<div class="addtile"><div class="plus">&#9733;</div><p>No World Cup reports yet. Set worldCup: true on a player to add them here.</p></div>`
+    : '';
+
+  document.getElementById('wcBoard').innerHTML = cards + empty;
+}  function radarChart(metrics, theme) {
+    const N = metrics.length;
+    if (N < 3) return '';
+    const cx = 110, cy = 115, R = 78;
+    const PI2 = 2 * Math.PI;
+    const angle = i => -Math.PI / 2 + (i / N) * PI2;
+    const pt = (r, i) => {
+      const a = angle(i);
+      return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+    };
+    const ptStr = (r, i) => { const p = pt(r, i); return p.x.toFixed(1)+','+p.y.toFixed(1); };
+    const ptList = r => metrics.map((_,i) => ptStr(r,i)).join(' ');
+
+    // Grid rings at 25, 50, 75, 100
+    const rings = [25,50,75,100].map(v =>
+      `<polygon points="${ptList((v/100)*R)}"
+         fill="none" stroke="#E5E0E6" stroke-width="0.8"/>`).join('');
+
+    // Spokes
+    const spokes = metrics.map((_,i) =>
+      `<line x1="${cx}" y1="${cy}" x2="${ptStr(R,i).split(',')[0]}" y2="${ptStr(R,i).split(',')[1]}"
+         stroke="#E5E0E6" stroke-width="0.8"/>`).join('');
+
+    // Data polygon
+    const dataPts = metrics.map((m,i) => ptStr((m.pct/100)*R, i)).join(' ');
+
+    // Dots on each data point
+    const dots = metrics.map((m,i) => {
+      const p = pt((m.pct/100)*R, i);
+      return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}"
+        r="3.5" fill="#822D3A"/>`;
+    }).join('');
+
+    // Labels (short versions to keep SVG clean)
+    const labels = metrics.map((m,i) => {
+      const p = pt(R+20, i);
+      const anchor = p.x < cx-5 ? 'end' : p.x > cx+5 ? 'start' : 'middle';
+      // Truncate label to 14 chars to fit
+      const lbl = m.label.length > 14 ? m.label.substring(0,13)+'.' : m.label;
+      return `<text x="${p.x.toFixed(1)}" y="${(p.y+3).toFixed(1)}"
+        text-anchor="${anchor}" font-size="8.5" fill="#7C7682"
+        font-family="Inter,sans-serif">${lbl}</text>
+      <text x="${p.x.toFixed(1)}" y="${(p.y+12).toFixed(1)}"
+        text-anchor="${anchor}" font-size="8" fill="#1565C0"
+        font-family="monospace" font-weight="bold">${m.pct}</text>`;
+    }).join('');
+
+    return `
+      <svg viewBox="0 0 220 230" width="220" height="230"
+           style="display:block;margin:0 auto;">
+        ${rings}${spokes}
+        <polygon points="${dataPts}"
+   fill="#1565C0" fill-opacity="0.12"
+  stroke="#1565C0" stroke-width="1.8"
+
+        ${dots}${labels}
+        <text x="${cx}" y="${cy}" text-anchor="middle"
+          font-size="9" fill="#C2B8BC" font-family="monospace">
+          Percentile
+        </text>
+      </svg>`;
+  }
+/* ── REPORT DETAIL ──────────────────────────────────────────────── */
+function renderReport(p){
+  const el=document.getElementById('report');
+  el.style.setProperty('--claret',p.theme.claret);
+  el.style.setProperty('--blue',p.theme.blue);
+
+  const meta=Object.entries(p.meta).map(([k,v],i)=>
+    `${i?'<span class="dot">&middot;</span>':''}<span>${esc(k)} <b>${esc(v)}</b></span>`).join(' ');
+  const chips=p.chips.map(c=>
+    `<div class="chip"><span class="k">${esc(c.k)}</span><span class="v">${esc(c.v)}</span></div>`).join('');
+  const bars=p.percentiles.map(b=>`
+    <div class="bar">
+      <div class="bar-label">${esc(b.label)}<small>${esc(b.per90)} per 90</small></div>
+      <div class="track"><div class="fill" data-w="${b.pct}" style="background:${tier(b.pct)}"></div></div>
+      <div class="pct">${b.pct}<small>th</small></div>
+    </div>`).join('');
+  const rateHTML = p.rates.length ? `
+    <h3 class="bt" style="font-size:13px;margin-top:14px;">Duel success rate</h3>
+    <div class="rates">${p.rates.map(r=>`
+      <div class="rate">
+        <div class="rate-top"><span class="lab">${esc(r.label)}</span><span class="num">${r.pct}%</span></div>
+        <div class="rate-track"><div class="rate-fill" data-w="${r.pct}"></div></div>
+      </div>`).join('')}</div>` : '';
+  const listBlock=(cls,title,items)=>`
+    <div class="col ${cls}"><h4>${esc(title)}</h4><ul>${items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>`;
+
+  el.innerHTML=`
+    <div class="np">
+      <div class="np-ghost">${p.number||''}</div>
+      <div class="np-grid">
+        <div class="np-left">
+          <p class="eb">Scouting Report &middot; ${esc(p.club)}</p>
+          <h2>${esc(p.name)}</h2>
+          <div class="np-meta">${meta}</div>
+          <div class="chips">${chips}</div>
+        </div>
+        <div class="np-right">
+          <div class="pitch-wrap">${pitchSVG(p.positions)}<div class="pitch-cap">${p.positions.join(' / ')} zone</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="verdict-block"><div class="eb2">Scout verdict</div><p>${esc(p.verdict)}</p></div>
+    <div class="block"><div class="eb2">Profile and role</div><p class="lede">${esc(p.role)}</p></div>
+    <div class="block">
+      Change:
+    <div class="block">
+        <div class="eb2">Statistical profile</div>
+        <h3 class="bt">Percentile rank (per 90, vs peers)</h3>
+
+  To:
+    <div class="block">
+      <div class="eb2">Statistical profile</div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:16px;">
+        <div style="flex:0 0 220px;">
+          ${radarChart(p.percentiles, p.theme)}
+        </div>
+        <div style="flex:1;min-width:200px;">
+          <h3 class="bt">Percentile rank (per 90, vs peers)</h3>
+      <div class="eb2">Statistical profile</div>
+      <h3 class="bt">Percentile rank (per 90, vs peers)</h3>
+      <div class="legend">
+        <span><i style="background:var(--blue)"></i>Elite (&ge;80th)</span>
+        <span><i style="background:var(--claret)"></i>Solid (50&ndash;79th)</span>
+        <span><i style="background:var(--grey)"></i>Work-on (&lt;50th)</span>
+      </div>
+      ${bars}${rateHTML}
+      <p class="note">${esc(p.percentileNote)}</p>
+      <p class="note">${esc(p.percentileNote)}</p>
+        </div>
+      </div>
+    </div>
+    <div class="block">
+      <div class="cols">
+        ${listBlock('s','Strengths',p.strengths)}
+        ${listBlock('w','Development areas',p.weaknesses)}
+      </div>
+    </div>
+    <div class="block"><div class="callout"><div class="eb2">Context</div>
+      <h3 class="bt" style="font-size:13px;">${esc(p.callout.title)}</h3>
+      <p>${esc(p.callout.body)}</p>
+    </div></div>
+    <div class="block"><div class="eb2">Outlook</div>
+      <h3 class="bt" style="font-size:13px;">${esc(p.projection.title)}</h3>
+      <p class="lede">${esc(p.projection.body)}</p>
+    </div>
+    <div class="foot-r">
+      <p class="method">Method: data narrows the search and the eye decides. Percentiles flag where to look; judgement weighs level, age and role.</p>
+      <div class="fr">
+        <span><b>Sources:</b> ${p.sources.map(esc).join(' &middot; ')}</span>
+        <span><b>Compiled:</b> ${esc(p.generated)}</span>
+      </div>
+    <button onclick="copyLink('${p.id}')" style="
+    background:none;border:1px solid #E7DFE2;border-radius:20px;
+    padding:5px 12px;font-size:11px;color:var(--muted);
+    cursor:pointer;margin-top:8px;">
+    Copy report link
+  </button>
+</div>`;
+
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    el.querySelectorAll('.fill,.rate-fill').forEach(f=>f.style.width=f.dataset.w+'%');
+  }));
+}
+
+/* ── NAVIGATION ─────────────────────────────────────────────────── */
+function showReport(id, origin){
+  const p=REPORTS.find(r=>r.id===id);
+  if(!p) return;
+  reportOrigin = origin || 'board';
+
+  /* Update back button label */
+  document.getElementById('backBtn').textContent =
+    origin==='worldcup' ? '\u2190 Back to World Cup' : '\u2190 Back to Board';
+
+  renderReport(p);
+  document.getElementById('boardView').classList.add('hidden');
+  document.getElementById('worldCupView').classList.add('hidden');
+  document.getElementById('reportView').classList.remove('hidden');
+  history.pushState(null, '', '#' + id);window.scrollTo(0,0);
+}
+
+function goBack(){
+  history.pushState(null, '', window.location.pathname);
+  document.getElementById('reportView').classList.add('hidden');
+  if(reportOrigin==='worldcup'){
+    showWorldCup();
+  } else {
+    showBoard();
+  }
+  window.scrollTo(0,0);
+}
+
+function showWorldCup(){
+  document.getElementById('boardView').classList.add('hidden');
+  document.getElementById('reportView').classList.add('hidden');
+  document.getElementById('worldCupView').classList.remove('hidden');
+  renderWorldCupBoard();
+  window.scrollTo(0,0);
+}
+
+function showBoard(){
+  document.getElementById('worldCupView').classList.add('hidden');
+  document.getElementById('reportView').classList.add('hidden');
+  document.getElementById('boardView').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+/* ── INIT ───────────────────────────────────────────────────────── */
+function handleSearch(query) {
+  searchQuery = query.toLowerCase().trim();
+  renderBoard();
+}
+
+function copyLink(id) {
+  const url = window.location.origin + window.location.pathname + '#' + id;
+  navigator.clipboard.writeText(url).then(() => {
+    alert('Link copied: ' + url);
+  });
+}
+
+function showComparison(id1, id2) {
+  const p1 = REPORTS.find(r => r.id === id1);
+  const p2 = REPORTS.find(r => r.id === id2);
+  if (!p1 || !p2) return;
+
+  // Get metrics for each player
+  function getCompareMetrics(p) {
+    if (p.universalMetrics) {
+      const labels = {
+        goalInvolvement: 'Goal Involvement', progressiveActions: 'Progressive Actions',
+        duelWins: 'Duels Won', xGxA: 'xG + xA', shots: 'Shots', distance: 'Distance'
+      };
+      return Object.entries(p.universalMetrics).map(([k,v]) => ({
+        label: labels[k] || k, per90: v.value, pct: v.pct
+      }));
+    }
+    return p.percentiles || [];
+  }
+
+  const m1 = getCompareMetrics(p1);
+  const m2 = getCompareMetrics(p2);
+
+  function playerCol(p, metrics) {
+    const bars = metrics.map(m => `
+      <div style="margin:10px 0;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+          <span style="font-weight:600;">${esc(m.label)}</span>
+          <span style="font-family:monospace;font-weight:700;color:#1565C0;">${m.pct}</span>
+        </div>
+        <div style="background:#EFEAEC;border-radius:3px;height:12px;overflow:hidden;">
+          <div style="width:${m.pct}%;height:12px;border-radius:3px;
+            background:${m.pct>=80?'#1565C0':m.pct>=50?'#822D3A':'#A0968C'};
+            transition:width .9s cubic-bezier(.22,1,.36,1);"></div>
+        </div>
+        <div style="font-size:10px;color:#9E9E9E;margin-top:2px;">${m.per90} per 90</div>
+      </div>`).join('');
+    return `
+      <div style="flex:1;background:#fff;border-radius:6px;padding:18px;border:1px solid #E5E0E6;">
+        <div style="background:${p.theme.claret};color:#fff;padding:12px 16px;border-radius:4px;margin-bottom:16px;">
+          <div style="font-size:10px;opacity:.8;">${esc(p.club)}</div>
+          <div style="font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;text-transform:uppercase;">${esc(p.name)}</div>
+          <div style="font-size:11px;opacity:.85;">${esc(p.meta.Position)} &middot; Age ${esc(p.meta.Age)}</div>
+        </div>
+        ${bars}
+        <button onclick="showReport('${p.id}','board')"
+          style="width:100%;margin-top:12px;padding:8px;background:${p.theme.claret};
+                 color:#fff;border:none;border-radius:4px;font-size:12px;cursor:pointer;">
+          Full Report
+        </button>
+      </div>`;
+  }
+
+  document.getElementById('compareContent').innerHTML = `
+    <h2 style="font-family:'Oswald',sans-serif;font-size:28px;text-transform:uppercase;margin:0 0 8px;">
+      Comparison
+    </h2>
+    <p style="color:#7C7682;font-size:13px;margin:0 0 20px;">
+      ${p1.universalMetrics && p2.universalMetrics
+        ? 'Universal metrics — directly comparable across positions.'
+        : 'Position-specific percentile ranks. Scale is 0-100 in all cases.'}
+    </p>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+      ${playerCol(p1, m1)}
+      ${playerCol(p2, m2)}
+    </div>`;
+
+  document.getElementById('boardView').classList.add('hidden');
+  document.getElementById('compareView').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+function handleCompare(id) {
+  if (!comparePlayer1) {
+    // First player selected — highlight their card
+    comparePlayer1 = id;
+    document.querySelectorAll('.pcard').forEach(c => c.style.opacity = '0.5');
+    const allCards = document.querySelectorAll('.pcard');
+    allCards.forEach(c => {
+      if (c.innerHTML.includes("handleCompare('" + id + "')")) {
+        c.style.opacity = '1';
+        c.style.outline = '3px solid #1565C0';
+      }
+    });
+    // Update button text
+    document.querySelectorAll('.compare-trigger').forEach(b => {
+      if (!b.innerHTML.includes("handleCompare('" + id + "')")) {
+        b.textContent = 'Compare with this';
+      }
+    });
+  } else if (comparePlayer1 === id) {
+    // Same player clicked — cancel
+    closeCompare();
+  } else {
+    // Second player selected — show comparison
+    showComparison(comparePlayer1, id);
+  }
+}
+
+function closeCompare() {
+  comparePlayer1 = null;
+  document.querySelectorAll('.pcard').forEach(c => {
+    c.style.opacity = '';
+    c.style.outline = '';
+  });
+  document.querySelectorAll('.compare-trigger').forEach(b => {
+    b.textContent = '+ Compare';
+  });
+  document.getElementById('compareView').classList.add('hidden');
+  document.getElementById('boardView').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+/* Initialize on page load */
+renderMast();
+renderMainFilters();
+renderBoard();
+
+// Shareable links: open player directly if URL has a hash
+if (window.location.hash) {
+  const hashId = window.location.hash.replace('#', '');
+  const hashPlayer = REPORTS.find(r => r.id === hashId);
+  if (hashPlayer) showReport(hashId, 'board');
+}
+function printReport() {
+    window.print();
+  }
+
+</script>
+</body>
+</html>
