@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Scouting Desk — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --ink:#16131A;
+    --muted:#7C7682;
+    --line:#E5E0E6;
+    --paper:#F2F0F3;
+    --card:#FFFFFF;
+    --pitch:#0E5C3E;
+    --elite:#1565C0;
+    --solid:#822D3A;
+    --workon:#A0968C;
+    --danger:#B3261E;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    font-size:15px;
+    line-height:1.5;
+  }
+  h1,h2,h3,h4{font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.2px;margin:0;}
+  mono, .mono{font-family:'IBM Plex Mono',monospace;}
+  a{color:inherit;}
+  button{font-family:'Inter',sans-serif;cursor:pointer;}
+
+  /* ---------- Login ---------- */
+  #loginScreen{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    background:var(--ink);
+  }
+  .loginBox{
+    background:var(--card);width:340px;padding:36px 32px;border-radius:var(--radius);
+    box-shadow:0 20px 50px rgba(0,0,0,.35);
+  }
+  .loginBox .eyebrow{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;}
+  .loginBox h1{font-size:26px;margin-bottom:24px;}
+  .loginBox input{
+    width:100%;padding:11px 12px;margin-bottom:12px;border:1px solid var(--line);
+    border-radius:8px;font-size:14px;background:var(--paper);
+  }
+  .loginBox button{
+    width:100%;padding:12px;background:var(--pitch);color:#fff;border:none;border-radius:8px;
+    font-weight:600;font-size:14px;margin-top:4px;
+  }
+  .loginError{color:var(--danger);font-size:13px;margin-top:10px;display:none;}
+
+  /* ---------- Shell ---------- */
+  #appShell{display:none;min-height:100vh;}
+  .sidebar{
+    width:220px;background:var(--ink);color:#fff;flex-shrink:0;
+    position:fixed;top:0;left:0;bottom:0;padding:24px 0;
+  }
+  .sidebar .brand{padding:0 20px 24px;border-bottom:1px solid rgba(255,255,255,.12);margin-bottom:16px;}
+  .sidebar .brand .eyebrow{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1.5px;}
+  .sidebar .brand h1{font-size:18px;color:#fff;margin-top:4px;}
+  .navItem{
+    display:flex;align-items:center;gap:10px;padding:12px 20px;color:#cfc9d4;
+    font-size:14px;font-weight:500;cursor:pointer;border-left:3px solid transparent;
+  }
+  .navItem:hover{background:rgba(255,255,255,.05);}
+  .navItem.active{color:#fff;background:rgba(255,255,255,.08);border-left-color:var(--pitch);}
+  .navItem .count{
+    margin-left:auto;background:rgba(255,255,255,.1);font-size:11px;padding:2px 7px;border-radius:10px;
+  }
+  .logoutBtn{
+    position:absolute;bottom:20px;left:20px;right:20px;background:none;border:1px solid rgba(255,255,255,.2);
+    color:#cfc9d4;padding:10px;border-radius:8px;font-size:13px;
+  }
+  main{margin-left:220px;flex:1;padding:32px 40px;max-width:1100px;}
+  .pageHead{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:24px;}
+  .pageHead h2{font-size:26px;}
+  .pageHead .sub{color:var(--muted);font-size:13px;margin-top:4px;}
+
+  /* ---------- Dashboard ---------- */
+  .statRow{display:flex;gap:16px;margin-bottom:28px;flex-wrap:wrap;}
+  .statCard{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px 22px;flex:1;min-width:160px;
+  }
+  .statCard .num{font-family:'IBM Plex Mono',monospace;font-size:28px;font-weight:600;}
+  .statCard .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.8px;margin-top:4px;}
+
+  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
+  th,td{padding:10px 14px;text-align:left;font-size:13.5px;border-bottom:1px solid var(--line);}
+  th{background:var(--paper);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.6px;}
+  tr:last-child td{border-bottom:none;}
+  .pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
+  .pill.yes{background:#E6F1EA;color:var(--pitch);}
+  .pill.no{background:var(--paper);color:var(--muted);}
+  .rowActions button{
+    border:1px solid var(--line);background:var(--card);border-radius:6px;padding:5px 10px;font-size:12px;margin-right:6px;
+  }
+  .rowActions .delBtn{color:var(--danger);border-color:#f0d4d2;}
+  .searchBox{
+    padding:9px 12px;border:1px solid var(--line);border-radius:8px;width:260px;font-size:13px;margin-bottom:14px;
+  }
+  .btnPrimary{background:var(--pitch);color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:600;font-size:13.5px;}
+  .btnGhost{background:var(--card);border:1px solid var(--line);padding:10px 18px;border-radius:8px;font-weight:600;font-size:13.5px;}
+
+  /* ---------- Form ---------- */
+  .formGrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .formGrid.full{grid-template-columns:1fr;}
+  .field{margin-bottom:4px;}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;}
+  .field input, .field select, .field textarea{
+    width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;
+    background:var(--card);font-family:'Inter',sans-serif;
+  }
+  .field textarea{resize:vertical;min-height:70px;}
+  fieldset{border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0;background:var(--card);}
+  legend{font-family:'Oswald',sans-serif;font-weight:600;font-size:15px;padding:0 6px;}
+  .legendSub{color:var(--muted);font-size:12px;margin:-8px 0 14px 6px;}
+  .checkRow{display:flex;gap:24px;align-items:center;}
+  .checkRow label{display:flex;align-items:center;gap:7px;font-size:13.5px;font-weight:500;color:var(--ink);}
+  .repeaterRow{display:flex;gap:8px;margin-bottom:8px;align-items:flex-start;}
+  .repeaterRow input, .repeaterRow textarea{flex:1;}
+  .repeaterRow .rmBtn{
+    border:1px solid var(--line);background:var(--card);border-radius:6px;width:34px;height:34px;color:var(--danger);flex-shrink:0;
+  }
+  .addBtn{
+    border:1px dashed var(--muted);background:none;border-radius:8px;padding:8px 14px;font-size:13px;color:var(--muted);margin-top:4px;
+  }
+  .saveBar{
+    position:sticky;bottom:0;background:var(--paper);padding:18px 0;margin-top:10px;
+    display:flex;gap:10px;border-top:1px solid var(--line);
+  }
+  .toast{
+    position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;padding:14px 20px;border-radius:8px;
+    font-size:13.5px;display:none;box-shadow:0 10px 30px rgba(0,0,0,.25);
+  }
+  .tabPanel{display:none;}
+  .tabPanel.active{display:block;}
+  .retiredNote{
+    background:#FFF6E5;border:1px solid #F0D9A0;border-radius:8px;padding:14px 18px;font-size:13.5px;color:#7A5B00;margin-bottom:16px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="loginScreen">
+  <div class="loginBox">
+    <div class="eyebrow">Independent Scouting</div>
+    <h1>The Scouting Desk</h1>
+    <input type="email" id="loginEmail" placeholder="Email" autocomplete="username">
+    <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
+    <button id="loginBtn">Sign in</button>
+    <div class="loginError" id="loginError">Incorrect email or password.</div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="appShell" style="display:flex;">
+  <div class="sidebar">
+    <div class="brand">
+      <div class="eyebrow">Independent Scouting</div>
+      <h1>The Scouting Desk</h1>
+    </div>
+    <div class="navItem active" data-tab="dashboard">Dashboard <span class="count" id="navReportCount">0</span></div>
+    <div class="navItem" data-tab="addReport">Add Report</div>
+    <div class="navItem" data-tab="subscribers">Subscribers <span class="count" id="navSubCount">0</span></div>
+    <div class="navItem" data-tab="exportHub">Export Hub</div>
+    <button class="logoutBtn" id="logoutBtn">Sign out</button>
+  </div>
+
+  <main>
+
+    <!-- ===== DASHBOARD ===== -->
+    <section class="tabPanel active" id="tab-dashboard">
+      <div class="pageHead">
+        <div>
+          <h2>Dashboard</h2>
+          <div class="sub">Live data from Supabase — refresh the hub after any change to see it go live.</div>
+        </div>
+        <button class="btnPrimary" id="newReportBtn">+ New report</button>
+      </div>
+
+      <div class="statRow">
+        <div class="statCard"><div class="num mono" id="statReports">0</div><div class="label">Reports</div></div>
+        <div class="statCard"><div class="num mono" id="statSubs">0</div><div class="label">Subscribers</div></div>
+        <div class="statCard"><div class="num mono" id="statLeagues">0</div><div class="label">Leagues covered</div></div>
+        <div class="statCard"><div class="num mono" id="statFeatured">0</div><div class="label">Featured</div></div>
+        <div class="statCard"><div class="num mono" id="statWC">0</div><div class="label">World Cup</div></div>
+      </div>
+
+      <input class="searchBox" id="dashSearch" placeholder="Search reports by name, club, league...">
+      <table>
+        <thead>
+          <tr><th>Player</th><th>Club</th><th>League</th><th>Position</th><th>Featured</th><th>World Cup</th><th></th></tr>
+        </thead>
+        <tbody id="reportsTableBody"></tbody>
+      </table>
+    </section>
+
+    <!-- ===== ADD / EDIT REPORT ===== -->
+    <section class="tabPanel" id="tab-addReport">
+      <div class="pageHead">
+        <div>
+          <h2 id="formTitle">Add Report</h2>
+          <div class="sub">Fill in every field. Slug / id is generated automatically from the player name.</div>
+        </div>
+      </div>
+
+      <form id="reportForm">
+        <input type="hidden" id="reportId">
+
+        <fieldset>
+          <legend>Identity</legend>
+          <div class="formGrid">
+            <div class="field"><label>Player name</label><input type="text" id="f_name" required></div>
+            <div class="field"><label>Slug / id</label><input type="text" id="f_slug" class="mono" placeholder="auto-generated"></div>
+            <div class="field"><label>Club</label><input type="text" id="f_club" required></div>
+            <div class="field"><label>League</label><input type="text" id="f_league" required></div>
+            <div class="field">
+              <label>Position group</label>
+              <select id="f_posGroup">
+                <option>Goalkeeper</option><option>Centre-back</option><option>Full-back</option>
+                <option>Midfielder</option><option>Winger</option><option>Striker</option>
+              </select>
+            </div>
+            <div class="field"><label>Shirt number</label><input type="number" id="f_number" min="0"></div>
+            <div class="field"><label>Pitch-map positions (comma separated, e.g. LB, LWB)</label><input type="text" id="f_positions"></div>
+            <div class="field"><label>Date added (World Cup board order)</label><input type="date" id="f_dateAdded"></div>
+          </div>
+          <div class="checkRow" style="margin-top:14px;">
+            <label><input type="checkbox" id="f_featured"> Featured</label>
+            <label><input type="checkbox" id="f_worldCup"> World Cup</label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Theme colours</legend>
+          <div class="legendSub">Banner background and accent only. Percentile bars, legend and Strengths/Development headings always use the fixed site colours regardless of this.</div>
+          <div class="formGrid">
+            <div class="field"><label>Claret (banner background)</label><input type="text" id="f_themeClaret" placeholder="#HEX"></div>
+            <div class="field"><label>Blue (accent / labels)</label><input type="text" id="f_themeBlue" placeholder="#HEX"></div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Meta</legend>
+          <div class="formGrid">
+            <div class="field"><label>Position</label><input type="text" id="f_metaPosition"></div>
+            <div class="field"><label>Age</label><input type="text" id="f_metaAge"></div>
+            <div class="field"><label>Foot</label><input type="text" id="f_metaFoot"></div>
+            <div class="field"><label>Nationality</label><input type="text" id="f_metaNationality"></div>
+            <div class="field"><label>Born</label><input type="text" id="f_metaBorn"></div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Chips</legend>
+          <div class="legendSub">Market value, Fee (write "Undisclosed" if not public — never guess), Contract, etc.</div>
+          <div id="chipsList"></div>
+          <button type="button" class="addBtn" data-repeater="chips">+ Add chip</button>
+        </fieldset>
+
+        <fieldset>
+          <legend>Verdict &amp; role</legend>
+          <div class="formGrid full">
+            <div class="field"><label>Verdict (bold lede, also shown on card)</label><textarea id="f_verdict"></textarea></div>
+            <div class="field"><label>Role (longer tactical paragraph)</label><textarea id="f_role" style="min-height:120px;"></textarea></div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Percentiles</legend>
+          <div class="legendSub">pct must be a plain integer, never approximation language.</div>
+          <div id="percentilesList"></div>
+          <button type="button" class="addBtn" data-repeater="percentiles">+ Add percentile row</button>
+          <div class="field" style="margin-top:14px;"><label>Percentile note (source / methodology)</label><input type="text" id="f_percentileNote"></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Duel rates (optional)</legend>
+          <div id="ratesList"></div>
+          <button type="button" class="addBtn" data-repeater="rates">+ Add rate row</button>
+        </fieldset>
+
+        <fieldset>
+          <legend>Strengths &amp; weaknesses</legend>
+          <div class="formGrid">
+            <div>
+              <label style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;">Strengths</label>
+              <div id="strengthsList" style="margin-top:8px;"></div>
+              <button type="button" class="addBtn" data-repeater="strengths">+ Add strength</button>
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;">Weaknesses</label>
+              <div id="weaknessesList" style="margin-top:8px;"></div>
+              <button type="button" class="addBtn" data-repeater="weaknesses">+ Add weakness</button>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Context Q&amp;A (callout)</legend>
+          <div class="formGrid full">
+            <div class="field"><label>Title</label><input type="text" id="f_calloutTitle"></div>
+            <div class="field"><label>Body</label><textarea id="f_calloutBody"></textarea></div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Projection</legend>
+          <div class="formGrid full">
+            <div class="field"><label>Title</label><input type="text" id="f_projectionTitle"></div>
+            <div class="field"><label>Body</label><textarea id="f_projectionBody"></textarea></div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Sources</legend>
+          <div id="sourcesList"></div>
+          <button type="button" class="addBtn" data-repeater="sources">+ Add source</button>
+        </fieldset>
+
+        <fieldset>
+          <legend>Universal metrics (optional)</legend>
+          <div class="legendSub">Cross-position comparison data. Leave the checkbox off to save as null. Outfield: goal involvement, progressive actions, duel wins, xG+xA, shots, distance. Goalkeepers: Save %, Clean sheets/90, Goals conceded/90, Saves/90, Sweeper actions/90, Distribution accuracy.</div>
+          <label style="display:flex;align-items:center;gap:7px;margin-bottom:14px;font-size:13.5px;font-weight:500;">
+            <input type="checkbox" id="f_hasUniversal"> Include universal metrics for this player
+          </label>
+          <div id="universalFields" style="display:none;">
+            <div class="formGrid" id="universalGrid"></div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Generated date</legend>
+          <div class="field"><input type="text" id="f_generated" placeholder="18 June 2026"></div>
+        </fieldset>
+
+        <div class="saveBar">
+          <button type="submit" class="btnPrimary" id="saveBtn">Save report</button>
+          <button type="button" class="btnGhost" id="cancelEditBtn">Cancel</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ===== SUBSCRIBERS ===== -->
+    <section class="tabPanel" id="tab-subscribers">
+      <div class="pageHead">
+        <div><h2>Subscribers</h2><div class="sub">Public sign-ups from the live hub.</div></div>
+        <button class="btnGhost" id="exportCsvBtn">Export CSV</button>
+      </div>
+      <table>
+        <thead><tr><th>Email</th><th>Name</th><th>Subscribed</th><th></th></tr></thead>
+        <tbody id="subsTableBody"></tbody>
+      </table>
+    </section>
+
+    <!-- ===== EXPORT HUB (retired) ===== -->
+    <section class="tabPanel" id="tab-exportHub">
+      <div class="pageHead"><div><h2>Export Hub</h2></div></div>
+      <div class="retiredNote">
+        Retired. The hub now reads live from Supabase on every page load, so there is nothing to export
+        or re-upload. Add, edit, and delete reports from the Dashboard and Add Report tabs — changes are
+        live within seconds. This tab is kept only for historical reference.
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   CONFIG — both admin.html and the public hub index.html
+   must use the SAME Supabase project URL and the SAME
+   publishable / anon key. Never put the secret key here.
+   ========================================================= */
+const SUPABASE_URL = 'https://gpliaipmccgnzydpmvtv.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_eiPHSrZI9AyFH7GBHdzbWw_ih_ntMtl';
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let allReports = [];
+let allSubscribers = [];
+let editingId = null;
+
+/* ---------- helpers ---------- */
+function slugify(name){
+  return name.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(()=>{ t.style.display='none'; }, 2600);
+}
+function switchTab(tab){
+  document.querySelectorAll('.navItem').forEach(n=>n.classList.toggle('active', n.dataset.tab===tab));
+  document.querySelectorAll('.tabPanel').forEach(p=>p.classList.toggle('active', p.id==='tab-'+tab));
+}
+document.querySelectorAll('.navItem').forEach(n=>{
+  n.addEventListener('click', ()=> switchTab(n.dataset.tab));
+});
+
+/* ---------- auth ---------- */
+document.getElementById('loginBtn').addEventListener('click', async ()=>{
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if (error){
+    document.getElementById('loginError').style.display='block';
+    return;
+  }
+  enterApp();
+});
+document.getElementById('logoutBtn').addEventListener('click', async ()=>{
+  await sb.auth.signOut();
+  document.getElementById('appShell').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+});
+
+async function checkSession(){
+  const { data } = await sb.auth.getSession();
+  if (data.session) enterApp();
+}
+
+function enterApp(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appShell').style.display='flex';
+  loadReports();
+  loadSubscribers();
+}
+
+/* ---------- reports: load + render ---------- */
+async function loadReports(){
+  const { data, error } = await sb.from('reports').select('id, data, created_at, updated_at').order('created_at', { ascending:false });
+  if (error){ showToast('Error loading reports: ' + error.message); return; }
+  allReports = (data || []).map(r => ({ id:r.id, ...r.data }));
+  renderDashboard();
+}
+
+function renderDashboard(query){
+  const q = (query||'').toLowerCase();
+  const rows = allReports.filter(r=>{
+    if(!q) return true;
+    return [r.name,r.club,r.league,r.posGroup].join(' ').toLowerCase().includes(q);
+  });
+  document.getElementById('reportsTableBody').innerHTML = rows.map(r => `
+    <tr>
+      <td><strong>${r.name||''}</strong></td>
+      <td>${r.club||''}</td>
+      <td>${r.league||''}</td>
+      <td>${r.posGroup||''}</td>
+      <td>${r.featured ? '<span class="pill yes">Featured</span>' : '<span class="pill no">No</span>'}</td>
+      <td>${r.worldCup ? '<span class="pill yes">World Cup</span>' : '<span class="pill no">No</span>'}</td>
+      <td class="rowActions">
+        <button onclick="editReport('${r.id}')">Edit</button>
+        <button class="delBtn" onclick="deleteReport('${r.id}')">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+
+  document.getElementById('statReports').textContent = allReports.length;
+  document.getElementById('statFeatured').textContent = allReports.filter(r=>r.featured).length;
+  document.getElementById('statWC').textContent = allReports.filter(r=>r.worldCup).length;
+  document.getElementById('statLeagues').textContent = new Set(allReports.map(r=>r.league).filter(Boolean)).size;
+  document.getElementById('navReportCount').textContent = allReports.length;
+}
+document.getElementById('dashSearch').addEventListener('input', e => renderDashboard(e.target.value));
+
+/* ---------- repeaters ---------- */
+function addRepeaterRow(containerId, fields, values){
+  const container = document.getElementById(containerId);
+  const row = document.createElement('div');
+  row.className = 'repeaterRow';
+  fields.forEach((f,i)=>{
+    const input = document.createElement(f.type==='textarea' ? 'textarea' : 'input');
+    if (f.type!=='textarea') input.type = 'text';
+    input.placeholder = f.placeholder || '';
+    input.dataset.field = f.name;
+    input.value = (values && values[i]!==undefined) ? values[i] : '';
+    row.appendChild(input);
+  });
+  const rm = document.createElement('button');
+  rm.type='button'; rm.className='rmBtn'; rm.textContent='×';
+  rm.onclick = ()=> row.remove();
+  row.appendChild(rm);
+  container.appendChild(row);
+}
+function readRepeater(containerId, keys){
+  const rows = document.querySelectorAll('#'+containerId+' .repeaterRow');
+  return Array.from(rows).map(row=>{
+    const inputs = row.querySelectorAll('input,textarea');
+    if (keys.length===1) return inputs[0].value;
+    const obj = {};
+    keys.forEach((k,i)=> obj[k] = inputs[i] ? inputs[i].value : '');
+    return obj;
+  }).filter(v => keys.length===1 ? v.trim()!=='' : Object.values(v).some(x=>String(x).trim()!==''));
+}
+
+document.querySelectorAll('[data-repeater]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const type = btn.dataset.repeater;
+    if (type==='chips') addRepeaterRow('chipsList', [{name:'k',placeholder:'Label e.g. Market value'},{name:'v',placeholder:'Value e.g. Undisclosed'}]);
+    if (type==='percentiles') addRepeaterRow('percentilesList', [{name:'label',placeholder:'Metric label'},{name:'per90',placeholder:'Per-90 value'},{name:'pct',placeholder:'Percentile (integer)'}]);
+    if (type==='rates') addRepeaterRow('ratesList', [{name:'label',placeholder:'Label e.g. Aerial duels won'},{name:'value',placeholder:'Value e.g. 64%'}]);
+    if (type==='strengths') addRepeaterRow('strengthsList', [{name:'v',placeholder:'Strength'}]);
+    if (type==='weaknesses') addRepeaterRow('weaknessesList', [{name:'v',placeholder:'Weakness'}]);
+    if (type==='sources') addRepeaterRow('sourcesList', [{name:'v',placeholder:'Source'}]);
+  });
+});
+
+/* ---------- universal metrics fields ---------- */
+const UNIVERSAL_OUTFIELD = ['goalInvolvement','progressiveActions','duelWins','xGxA','shots','distance'];
+const UNIVERSAL_GK = ['savePct','cleanSheetsPer90','goalsConcededPer90','savesPer90','sweeperActionsPer90','distributionAccuracy'];
+function buildUniversalFields(keys, values){
+  const grid = document.getElementById('universalGrid');
+  grid.innerHTML = keys.map(k=>{
+    const v = (values && values[k]) || {};
+    return `
+      <div class="field">
+        <label>${k}</label>
+        <input type="text" placeholder="value" data-uni-value="${k}" value="${v.value!==undefined?v.value:''}">
+      </div>
+      <div class="field">
+        <label>${k} pct</label>
+        <input type="text" placeholder="percentile (integer)" data-uni-pct="${k}" value="${v.pct!==undefined?v.pct:''}">
+      </div>
+    `;
+  }).join('');
+}
+document.getElementById('f_hasUniversal').addEventListener('change', (e)=>{
+  document.getElementById('universalFields').style.display = e.target.checked ? 'block' : 'none';
+  if (e.target.checked && !document.getElementById('universalGrid').children.length){
+    const posGroup = document.getElementById('f_posGroup').value;
+    buildUniversalFields(posGroup==='Goalkeeper' ? UNIVERSAL_GK : UNIVERSAL_OUTFIELD);
+  }
+});
+
+/* ---------- form: reset / populate / submit ---------- */
+function resetForm(){
+  editingId = null;
+  document.getElementById('formTitle').textContent = 'Add Report';
+  document.getElementById('reportForm').reset();
+  ['chipsList','percentilesList','ratesList','strengthsList','weaknessesList','sourcesList'].forEach(id=>{
+    document.getElementById(id).innerHTML = '';
+  });
+  document.getElementById('universalFields').style.display='none';
+  document.getElementById('universalGrid').innerHTML='';
+  // default starter chips
+  addRepeaterRow('chipsList', [{name:'k'},{name:'v'}], ['Market value','']);
+  addRepeaterRow('chipsList', [{name:'k'},{name:'v'}], ['Fee','Undisclosed']);
+  addRepeaterRow('chipsList', [{name:'k'},{name:'v'}], ['Contract','']);
+  addRepeaterRow('percentilesList', [{name:'label'},{name:'per90'},{name:'pct'}]);
+}
+document.getElementById('newReportBtn').addEventListener('click', ()=>{
+  resetForm();
+  switchTab('addReport');
+});
+document.getElementById('cancelEditBtn').addEventListener('click', ()=>{
+  resetForm();
+  switchTab('dashboard');
+});
+document.getElementById('f_name').addEventListener('input', (e)=>{
+  if (!editingId) document.getElementById('f_slug').value = slugify(e.target.value);
+});
+
+window.editReport = function(id){
+  const r = allReports.find(x=>x.id===id);
+  if (!r) return;
+  editingId = id;
+  document.getElementById('formTitle').textContent = 'Edit Report — ' + r.name;
+  document.getElementById('reportId').value = id;
+  document.getElementById('f_name').value = r.name||'';
+  document.getElementById('f_slug').value = r.id||id;
+  document.getElementById('f_club').value = r.club||'';
+  document.getElementById('f_league').value = r.league||'';
+  document.getElementById('f_posGroup').value = r.posGroup||'Midfielder';
+  document.getElementById('f_number').value = r.number||'';
+  document.getElementById('f_positions').value = (r.positions||[]).join(', ');
+  document.getElementById('f_dateAdded').value = r.dateAdded||'';
+  document.getElementById('f_featured').checked = !!r.featured;
+  document.getElementById('f_worldCup').checked = !!r.worldCup;
+  document.getElementById('f_themeClaret').value = (r.theme&&r.theme.claret)||'';
+  document.getElementById('f_themeBlue').value = (r.theme&&r.theme.blue)||'';
+  const m = r.meta||{};
+  document.getElementById('f_metaPosition').value = m.Position||'';
+  document.getElementById('f_metaAge').value = m.Age||'';
+  document.getElementById('f_metaFoot').value = m.Foot||'';
+  document.getElementById('f_metaNationality').value = m.Nationality||'';
+  document.getElementById('f_metaBorn').value = m.Born||'';
+  document.getElementById('f_verdict').value = r.verdict||'';
+  document.getElementById('f_role').value = r.role||'';
+  document.getElementById('f_percentileNote').value = r.percentileNote||'';
+  document.getElementById('f_calloutTitle').value = (r.callout&&r.callout.title)||'';
+  document.getElementById('f_calloutBody').value = (r.callout&&r.callout.body)||'';
+  document.getElementById('f_projectionTitle').value = (r.projection&&r.projection.title)||'';
+  document.getElementById('f_projectionBody').value = (r.projection&&r.projection.body)||'';
+  document.getElementById('f_generated').value = r.generated||'';
+
+  ['chipsList','percentilesList','ratesList','strengthsList','weaknessesList','sourcesList'].forEach(id=>{
+    document.getElementById(id).innerHTML = '';
+  });
+  (r.chips||[]).forEach(c => addRepeaterRow('chipsList', [{name:'k'},{name:'v'}], [c.k, c.v]));
+  (r.percentiles||[]).forEach(p => addRepeaterRow('percentilesList', [{name:'label'},{name:'per90'},{name:'pct'}], [p.label, p.per90, p.pct]));
+  (r.rates||[]).forEach(rt => addRepeaterRow('ratesList', [{name:'label'},{name:'value'}], [rt.label, rt.value]));
+  (r.strengths||[]).forEach(s => addRepeaterRow('strengthsList', [{name:'v'}], [s]));
+  (r.weaknesses||[]).forEach(w => addRepeaterRow('weaknessesList', [{name:'v'}], [w]));
+  (r.sources||[]).forEach(s => addRepeaterRow('sourcesList', [{name:'v'}], [s]));
+
+  if (r.universalMetrics){
+    document.getElementById('f_hasUniversal').checked = true;
+    document.getElementById('universalFields').style.display='block';
+    const keys = r.posGroup==='Goalkeeper' ? UNIVERSAL_GK : UNIVERSAL_OUTFIELD;
+    buildUniversalFields(keys, r.universalMetrics);
+  } else {
+    document.getElementById('f_hasUniversal').checked = false;
+    document.getElementById('universalFields').style.display='none';
+    document.getElementById('universalGrid').innerHTML='';
+  }
+
+  switchTab('addReport');
+};
+
+window.deleteReport = async function(id){
+  if (!confirm('Delete this report permanently? This cannot be undone.')) return;
+  const { error } = await sb.from('reports').delete().eq('id', id);
+  if (error){ showToast('Delete failed: ' + error.message); return; }
+  showToast('Report deleted.');
+  loadReports();
+};
+
+document.getElementById('reportForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const name = document.getElementById('f_name').value.trim();
+  const id = (document.getElementById('f_slug').value.trim() || slugify(name));
+  const positions = document.getElementById('f_positions').value.split(',').map(s=>s.trim()).filter(Boolean);
+
+  let universalMetrics = null;
+  if (document.getElementById('f_hasUniversal').checked){
+    universalMetrics = {};
+    document.querySelectorAll('#universalGrid [data-uni-value]').forEach(inp=>{
+      const k = inp.dataset.uniValue;
+      const pctInp = document.querySelector(`#universalGrid [data-uni-pct="${k}"]`);
+      universalMetrics[k] = { value: inp.value, pct: pctInp ? Number(pctInp.value)||0 : 0 };
+    });
+  }
+
+  const data = {
+    id,
+    featured: document.getElementById('f_featured').checked,
+    worldCup: document.getElementById('f_worldCup').checked,
+    dateAdded: document.getElementById('f_dateAdded').value || null,
+    image: null,
+    name,
+    club: document.getElementById('f_club').value.trim(),
+    league: document.getElementById('f_league').value.trim(),
+    posGroup: document.getElementById('f_posGroup').value,
+    number: Number(document.getElementById('f_number').value) || 0,
+    positions,
+    theme: {
+      claret: document.getElementById('f_themeClaret').value.trim(),
+      blue: document.getElementById('f_themeBlue').value.trim()
+    },
+    meta: {
+      Position: document.getElementById('f_metaPosition').value.trim(),
+      Age: document.getElementById('f_metaAge').value.trim(),
+      Foot: document.getElementById('f_metaFoot').value.trim(),
+      Nationality: document.getElementById('f_metaNationality').value.trim(),
+      Born: document.getElementById('f_metaBorn').value.trim()
+    },
+    chips: readRepeater('chipsList', ['k','v']),
+    verdict: document.getElementById('f_verdict').value.trim(),
+    role: document.getElementById('f_role').value.trim(),
+    percentiles: readRepeater('percentilesList', ['label','per90','pct']).map(p => ({...p, pct: Number(p.pct)||0})),
+    percentileNote: document.getElementById('f_percentileNote').value.trim(),
+    rates: readRepeater('ratesList', ['label','value']),
+    strengths: readRepeater('strengthsList', ['v']),
+    weaknesses: readRepeater('weaknessesList', ['v']),
+    callout: {
+      title: document.getElementById('f_calloutTitle').value.trim(),
+      body: document.getElementById('f_calloutBody').value.trim()
+    },
+    projection: {
+      title: document.getElementById('f_projectionTitle').value.trim(),
+      body: document.getElementById('f_projectionBody').value.trim()
+    },
+    sources: readRepeater('sourcesList', ['v']),
+    generated: document.getElementById('f_generated').value.trim(),
+    universalMetrics
+  };
+
+  const { error } = await sb.from('reports').upsert({ id, data }, { onConflict:'id' });
+  if (error){ showToast('Save failed: ' + error.message); return; }
+  showToast('Report saved. Refresh the live hub to see it.');
+  resetForm();
+  loadReports();
+  switchTab('dashboard');
+});
+
+/* ---------- subscribers ---------- */
+async function loadSubscribers(){
+  const { data, error } = await sb.from('subscribers').select('*').order('subscribed_at', { ascending:false });
+  if (error){ showToast('Error loading subscribers: ' + error.message); return; }
+  allSubscribers = data || [];
+  document.getElementById('subsTableBody').innerHTML = allSubscribers.map(s => `
+    <tr>
+      <td>${s.email}</td>
+      <td>${s.name||''}</td>
+      <td>${s.subscribed_at ? new Date(s.subscribed_at).toLocaleDateString() : ''}</td>
+      <td class="rowActions"><button class="delBtn" onclick="deleteSubscriber('${s.id}')">Remove</button></td>
+    </tr>
+  `).join('');
+  document.getElementById('statSubs').textContent = allSubscribers.length;
+  document.getElementById('navSubCount').textContent = allSubscribers.length;
+}
+
+window.deleteSubscriber = async function(id){
+  if (!confirm('Remove this subscriber?')) return;
+  const { error } = await sb.from('subscribers').delete().eq('id', id);
+  if (error){ showToast('Remove failed: ' + error.message); return; }
+  loadSubscribers();
+};
+
+document.getElementById('exportCsvBtn').addEventListener('click', ()=>{
+  const rows = [['email','name','subscribed_at'], ...allSubscribers.map(s=>[s.email, s.name||'', s.subscribed_at||''])];
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type:'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'scouting-desk-subscribers.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+/* ---------- init ---------- */
+resetForm();
+checkSession();
+</script>
+</body>
+</html>

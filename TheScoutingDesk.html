@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Scouting Desk — Player analysis, profiles and recruitment notes</title>
+<meta name="description" content="Independent scouting. Player analysis, profiles and recruitment notes on under-the-radar talent before the big five leagues notice them.">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --ink:#16131A; --muted:#7C7682; --line:#E5E0E6; --paper:#F2F0F3; --card:#FFFFFF;
+    --pitch:#0E5C3E; --wc-blue:#003380; --wc-gold:#FFC300; --wc-orange:#FF6B35;
+    --elite:#1565C0; --solid:#822D3A; --workon:#A0968C;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;font-size:15px;line-height:1.55;}
+  h1,h2,h3,h4{font-family:'Oswald',sans-serif;font-weight:600;margin:0;letter-spacing:.2px;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  a{color:inherit;text-decoration:none;}
+  button{font-family:'Inter',sans-serif;cursor:pointer;}
+  img{max-width:100%;}
+
+  /* ---------- top nav ---------- */
+  .topbar{background:var(--ink);color:#fff;position:sticky;top:0;z-index:50;}
+  .topbarInner{max-width:1100px;margin:0 auto;padding:14px 18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+  .brand{display:flex;flex-direction:column;cursor:pointer;}
+  .brand .eyebrow{font-size:10px;color:#9c96a3;text-transform:uppercase;letter-spacing:1.5px;}
+  .brand h1{font-size:18px;color:#fff;}
+  .navLinks{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto;}
+  .navLinks button{background:none;border:none;color:#cfc9d4;font-size:13px;font-weight:500;padding:8px 12px;border-radius:6px;}
+  .navLinks button.active{background:rgba(255,255,255,.1);color:#fff;}
+  .navLinks .dropdown{position:relative;}
+  .posMenu{display:none;position:absolute;top:38px;right:0;background:var(--card);color:var(--ink);border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.25);min-width:200px;padding:6px;z-index:60;}
+  .posMenu.open{display:block;}
+  .posMenu button{display:block;width:100%;text-align:left;color:var(--ink);font-size:13px;padding:8px 10px;border-radius:6px;background:none;border:none;}
+  .posMenu button:hover{background:var(--paper);}
+  .searchRow{width:100%;display:flex;gap:8px;}
+  .searchRow input{
+    flex:1;padding:10px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.2);
+    background:rgba(255,255,255,.08);color:#fff;font-size:13.5px;
+  }
+  .searchRow input::placeholder{color:#9c96a3;}
+
+  main{max-width:1100px;margin:0 auto;padding:24px 18px 60px;}
+
+  /* ---------- grid ---------- */
+  .sectionHead{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px;}
+  .sectionHead h2{font-size:24px;}
+  .sectionHead .count{color:var(--muted);font-size:13px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;}
+  .reportCard{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;
+    transition:transform .15s, box-shadow .15s;
+  }
+  .reportCard:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,.08);}
+  .cardBanner{padding:16px 16px 36px;position:relative;color:#fff;}
+  .cardBanner .ghostNum{
+    position:absolute;right:8px;bottom:-6px;font-family:'Oswald',sans-serif;font-weight:700;
+    font-size:54px;opacity:.25;line-height:1;
+  }
+  .cardBanner .featBadge{
+    position:absolute;top:10px;right:10px;background:rgba(255,255,255,.15);font-size:10px;
+    padding:3px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px;
+  }
+  .cardBanner .pos{font-size:11px;text-transform:uppercase;letter-spacing:.6px;opacity:.85;}
+  .cardBanner .name{font-size:18px;margin-top:4px;}
+  .cardBody{padding:14px 16px;}
+  .cardBody .club{font-size:12.5px;color:var(--muted);margin-bottom:8px;}
+  .cardBody .verdict{font-size:13px;color:var(--ink);}
+  .emptyState{color:var(--muted);font-size:14px;padding:40px 0;text-align:center;}
+
+  /* ---------- World Cup board ---------- */
+  .wcHero{
+    background:linear-gradient(135deg, var(--wc-blue), #001f4d);border-radius:14px;padding:26px 22px;color:#fff;
+    margin-bottom:20px;border:2px solid var(--wc-gold);
+  }
+  .wcHero .eyebrow{color:var(--wc-gold);font-size:11px;text-transform:uppercase;letter-spacing:1.5px;}
+  .wcHero h2{font-size:26px;color:#fff;margin-top:4px;}
+  .wcHero p{color:#cbd8f0;font-size:13px;margin-top:6px;}
+
+  /* ---------- detail view ---------- */
+  #detailView{display:none;}
+  .backBtn{background:none;border:none;color:var(--muted);font-size:13px;margin-bottom:14px;padding:0;}
+  .reportBanner{border-radius:14px;padding:34px 28px;color:#fff;position:relative;overflow:hidden;margin-bottom:22px;}
+  .reportBanner .ghostNum{
+    position:absolute;right:10px;top:-10px;font-family:'Oswald',sans-serif;font-weight:700;font-size:140px;opacity:.18;line-height:1;
+  }
+  .reportBanner .eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:1px;opacity:.85;}
+  .reportBanner h2{font-size:32px;color:#fff;margin-top:6px;}
+  .reportBanner .clubLine{font-size:14px;opacity:.9;margin-top:4px;}
+  .metaRow{display:flex;flex-wrap:wrap;gap:18px;margin-top:18px;}
+  .metaRow .item{font-size:12px;}
+  .metaRow .item .k{opacity:.75;text-transform:uppercase;letter-spacing:.5px;display:block;font-size:10px;}
+  .metaRow .item .v{font-family:'IBM Plex Mono',monospace;font-weight:600;margin-top:2px;}
+  .chipsRow{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;}
+  .chip{background:rgba(255,255,255,.15);border-radius:8px;padding:7px 12px;font-size:12px;}
+  .chip .k{opacity:.8;}
+  .chip .v{font-weight:600;margin-left:4px;}
+  .bannerActions{display:flex;gap:10px;margin-top:20px;}
+  .bannerActions button{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:8px 16px;border-radius:8px;font-size:12.5px;font-weight:600;}
+
+  .verdictBlock{font-size:17px;font-weight:600;margin-bottom:14px;}
+  .roleBlock{color:var(--ink);font-size:14.5px;margin-bottom:26px;}
+
+  .twoCol{display:grid;grid-template-columns:1.2fr 1fr;gap:24px;margin-bottom:26px;}
+  @media (max-width:720px){ .twoCol{grid-template-columns:1fr;} }
+
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;}
+  .panel h3{font-size:14px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink);margin-bottom:14px;}
+
+  .pctRow{margin-bottom:14px;}
+  .pctRow .lbl{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px;}
+  .pctRow .lbl .val{font-family:'IBM Plex Mono',monospace;font-weight:600;}
+  .pctTrack{height:8px;background:var(--paper);border-radius:6px;overflow:hidden;}
+  .pctFill{height:100%;border-radius:6px;}
+  .pctFill.elite{background:var(--elite);}
+  .pctFill.solid{background:var(--solid);}
+  .pctFill.workon{background:var(--workon);}
+  .pctNote{font-size:11.5px;color:var(--muted);margin-top:10px;}
+  .legendRow{display:flex;gap:14px;margin-top:14px;font-size:11px;color:var(--muted);}
+  .legendRow span{display:flex;align-items:center;gap:5px;}
+  .legendDot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+
+  .swCol{margin-bottom:18px;}
+  .swCol h4{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--elite);margin-bottom:8px;}
+  .swCol.weak h4{color:var(--solid);}
+  .swCol ul{margin:0;padding-left:18px;font-size:13.5px;}
+  .swCol li{margin-bottom:6px;}
+
+  canvas#radarCanvas{width:100%;max-width:280px;display:block;margin:0 auto 10px;}
+
+  .calloutPanel{background:#FFF6E5;border:1px solid #F0D9A0;border-radius:12px;padding:18px 20px;margin-bottom:20px;}
+  .calloutPanel h3{font-size:14px;color:#7A5B00;margin-bottom:8px;}
+
+  .projectionPanel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:20px;}
+  .projectionPanel h3{font-size:14px;color:var(--pitch);margin-bottom:8px;}
+
+  .sourcesLine{font-size:12px;color:var(--muted);margin-top:20px;}
+
+  /* ---------- compare overlay ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-start;justify-content:center;z-index:100;padding:30px 16px;overflow-y:auto;}
+  .overlay.open{display:flex;}
+  .overlayBox{background:var(--card);border-radius:14px;padding:22px;max-width:640px;width:100%;}
+  .overlayBox h3{font-size:18px;margin-bottom:12px;}
+  .overlayBox input{width:100%;padding:10px 14px;border:1px solid var(--line);border-radius:8px;font-size:14px;margin-bottom:10px;}
+  .overlayClose{float:right;background:none;border:none;color:var(--muted);font-size:18px;}
+  .pickList{max-height:240px;overflow-y:auto;}
+  .pickList .pickItem{padding:10px;border-radius:8px;cursor:pointer;font-size:13.5px;}
+  .pickList .pickItem:hover{background:var(--paper);}
+  .compareTable{width:100%;border-collapse:collapse;margin-top:14px;}
+  .compareTable th,.compareTable td{padding:8px 10px;border-bottom:1px solid var(--line);font-size:13px;text-align:left;}
+  .compareTable th{color:var(--muted);font-size:11px;text-transform:uppercase;}
+
+  /* ---------- subscribe ---------- */
+  .subscribeBlock{background:var(--ink);color:#fff;border-radius:14px;padding:30px 26px;margin-top:40px;}
+  .subscribeBlock h2{color:#fff;font-size:20px;}
+  .subscribeBlock p{color:#cfc9d4;font-size:13px;margin:8px 0 16px;}
+  .subscribeForm{display:flex;gap:10px;flex-wrap:wrap;}
+  .subscribeForm input{flex:1;min-width:180px;padding:11px 14px;border-radius:8px;border:none;font-size:13.5px;}
+  .subscribeForm button{background:var(--pitch);color:#fff;border:none;padding:11px 20px;border-radius:8px;font-weight:600;font-size:13.5px;}
+  .subscribeNote{font-size:12px;color:#9c96a3;margin-top:10px;display:none;}
+
+  footer{text-align:center;color:var(--muted);font-size:12px;padding:24px 0;}
+
+  /* ---------- print ---------- */
+  @media print{
+    .topbar, .bannerActions, .backBtn, footer, .subscribeBlock { display:none !important; }
+    main{padding:0;}
+  }
+
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:8px;font-size:12.5px;display:none;z-index:200;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbarInner">
+    <div class="brand" onclick="goHome()">
+      <div class="eyebrow">Independent Scouting</div>
+      <h1>The Scouting Desk</h1>
+    </div>
+    <div class="navLinks">
+      <button data-filter="all" class="active">All</button>
+      <button data-filter="featured">Featured</button>
+      <div class="dropdown">
+        <button id="posBtn">Positions ▾</button>
+        <div class="posMenu" id="posMenu"></div>
+      </div>
+      <button data-filter="worldcup">World Cup 2026</button>
+    </div>
+    <div class="searchRow">
+      <input type="text" id="searchInput" placeholder="Search by name, club, league, position, nationality...">
+    </div>
+  </div>
+</div>
+
+<main>
+
+  <div id="gridView">
+    <div class="wcHero" id="wcHero" style="display:none;">
+      <div class="eyebrow">FIFA World Cup 2026</div>
+      <h2>World Cup Board</h2>
+      <p>Players from the main scouting list who are also at the tournament with their national team. Newest additions first.</p>
+    </div>
+    <div class="sectionHead">
+      <h2 id="gridTitle">All reports</h2>
+      <span class="count" id="gridCount"></span>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <div id="detailView">
+    <button class="backBtn" onclick="goHome()">← Back to all reports</button>
+    <div id="detailContent"></div>
+  </div>
+
+  <div class="subscribeBlock">
+    <h2>Get new reports first</h2>
+    <p>One email when a new player report goes live. No spam, unsubscribe any time.</p>
+    <form class="subscribeForm" id="subscribeForm">
+      <input type="text" id="subName" placeholder="Name (optional)">
+      <input type="email" id="subEmail" placeholder="Email address" required>
+      <button type="submit">Subscribe</button>
+    </form>
+    <div class="subscribeNote" id="subscribeNote"></div>
+  </div>
+
+</main>
+
+<footer>The Scouting Desk — @TheScoutingDesk — Player analysis, profiles and recruitment notes.</footer>
+
+<div class="overlay" id="compareOverlay">
+  <div class="overlayBox">
+    <button class="overlayClose" onclick="closeCompare()">×</button>
+    <h3>Compare with...</h3>
+    <input type="text" id="compareSearch" placeholder="Search for a second player">
+    <div class="pickList" id="compareList"></div>
+    <div id="compareResult"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   CONFIG — must match admin.html exactly: same Supabase
+   project URL and the same publishable / anon key.
+   ========================================================= */
+const SUPABASE_URL = 'https://gpliaipmccgnzydpmvtv.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_eiPHSrZI9AyFH7GBHdzbWw_ih_ntMtl';
+
+const hubSb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let REPORTS = [];
+let currentFilter = 'all';
+let currentPos = null;
+let compareBase = null;
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(()=> t.style.display='none', 2200);
+}
+
+/* ---------- load data ---------- */
+async function loadReportsFromDB(){
+  const { data, error } = await hubSb.from('reports').select('data');
+  if (error){ showToast('Could not load reports.'); console.error(error); return; }
+  REPORTS = (data || []).map(r => r.data);
+  buildPositionsMenu();
+  route();
+}
+
+function buildPositionsMenu(){
+  const counts = {};
+  REPORTS.forEach(r => { counts[r.posGroup] = (counts[r.posGroup]||0) + 1; });
+  const menu = document.getElementById('posMenu');
+  menu.innerHTML = Object.entries(counts).map(([pos,n]) =>
+    `<button onclick="filterByPosition('${pos.replace(/'/g,"\\'")}')">${pos} (${n})</button>`
+  ).join('');
+}
+
+/* ---------- nav ---------- */
+document.querySelectorAll('.navLinks > button[data-filter]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentFilter = btn.dataset.filter;
+    currentPos = null;
+    document.querySelectorAll('.navLinks > button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    location.hash = '';
+    renderGrid();
+  });
+});
+document.getElementById('posBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  document.getElementById('posMenu').classList.toggle('open');
+});
+document.addEventListener('click', () => document.getElementById('posMenu').classList.remove('open'));
+function filterByPosition(pos){
+  currentFilter = 'position';
+  currentPos = pos;
+  document.querySelectorAll('.navLinks > button').forEach(b=>b.classList.remove('active'));
+  location.hash = '';
+  renderGrid();
+}
+function goHome(){
+  currentFilter = 'all';
+  currentPos = null;
+  document.querySelectorAll('.navLinks > button[data-filter]').forEach(b=>b.classList.toggle('active', b.dataset.filter==='all'));
+  location.hash = '';
+  renderGrid();
+}
+
+document.getElementById('searchInput').addEventListener('input', () => renderGrid());
+
+/* ---------- grid rendering ---------- */
+function getFilteredReports(){
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  let list = REPORTS.slice();
+
+  if (currentFilter === 'featured') list = list.filter(r => r.featured);
+  if (currentFilter === 'worldcup') list = list.filter(r => r.worldCup).sort((a,b) => (b.dateAdded||'').localeCompare(a.dateAdded||''));
+  if (currentFilter === 'position') list = list.filter(r => r.posGroup === currentPos);
+
+  if (q){
+    list = list.filter(r => [r.name,r.club,r.league,r.posGroup,(r.meta&&r.meta.Nationality)].join(' ').toLowerCase().includes(q));
+  }
+  return list;
+}
+
+function renderGrid(){
+  document.getElementById('detailView').style.display = 'none';
+  document.getElementById('gridView').style.display = 'block';
+
+  const list = getFilteredReports();
+  document.getElementById('wcHero').style.display = currentFilter === 'worldcup' ? 'block' : 'none';
+
+  const titles = { all:'All reports', featured:'Featured', worldcup:'World Cup 2026', position: currentPos };
+  document.getElementById('gridTitle').textContent = titles[currentFilter] || 'All reports';
+  document.getElementById('gridCount').textContent = list.length + (list.length===1 ? ' report' : ' reports');
+
+  const grid = document.getElementById('grid');
+  if (!list.length){
+    grid.innerHTML = '<div class="emptyState">No reports match yet.</div>';
+    return;
+  }
+  grid.innerHTML = list.map(r => `
+    <a href="#${r.id}" class="reportCard">
+      <div class="cardBanner" style="background:${(r.theme&&r.theme.claret)||'#16131A'};">
+        ${r.featured ? '<span class="featBadge">Featured</span>' : ''}
+        <div class="pos">${r.posGroup||''}</div>
+        <div class="name">${r.name||''}</div>
+        <div class="ghostNum mono">${r.number||''}</div>
+      </div>
+      <div class="cardBody">
+        <div class="club">${r.club||''} · ${r.league||''}</div>
+        <div class="verdict">${(r.verdict||'').split('.')[0]}.</div>
+      </div>
+    </a>
+  `).join('');
+}
+
+/* ---------- routing ---------- */
+window.addEventListener('hashchange', route);
+function route(){
+  const id = location.hash.replace('#','');
+  if (id){
+    const r = REPORTS.find(x => x.id === id);
+    if (r){ renderDetail(r); return; }
+  }
+  renderGrid();
+}
+
+/* ---------- detail view ---------- */
+function tierClass(pct){
+  if (pct >= 80) return 'elite';
+  if (pct >= 50) return 'solid';
+  return 'workon';
+}
+function tierLabel(pct){
+  if (pct >= 80) return 'Elite';
+  if (pct >= 50) return 'Solid';
+  return 'Work-on';
+}
+
+function renderDetail(r){
+  document.getElementById('gridView').style.display = 'none';
+  document.getElementById('detailView').style.display = 'block';
+
+  const meta = r.meta || {};
+  const metaHtml = Object.entries(meta).map(([k,v]) => `
+    <div class="item"><span class="k">${k}</span><span class="v">${v||''}</span></div>
+  `).join('');
+  const chipsHtml = (r.chips||[]).map(c => `<div class="chip"><span class="k">${c.k}</span><span class="v">${c.v}</span></div>`).join('');
+
+  const pctHtml = (r.percentiles||[]).map(p => `
+    <div class="pctRow">
+      <div class="lbl"><span>${p.label}</span><span class="val">${p.per90} · ${p.pct}th</span></div>
+      <div class="pctTrack"><div class="pctFill ${tierClass(p.pct)}" style="width:${p.pct}%;"></div></div>
+    </div>
+  `).join('');
+
+  const ratesHtml = (r.rates && r.rates.length) ? `
+    <h3 style="margin-top:18px;">Duel rates</h3>
+    ${r.rates.map(rt => `<div class="pctRow"><div class="lbl"><span>${rt.label}</span><span class="val">${rt.value}</span></div></div>`).join('')}
+  ` : '';
+
+  document.getElementById('detailContent').innerHTML = `
+    <div class="reportBanner" style="background:linear-gradient(135deg, ${(r.theme&&r.theme.claret)||'#16131A'}, #00000022);">
+      <div class="ghostNum mono">${r.number||''}</div>
+      <div class="eyebrow">${r.posGroup||''}${r.worldCup ? ' · World Cup 2026' : ''}</div>
+      <h2>${r.name||''}</h2>
+      <div class="clubLine">${r.club||''} · ${r.league||''}</div>
+      <div class="metaRow">${metaHtml}</div>
+      <div class="chipsRow">${chipsHtml}</div>
+      <div class="bannerActions">
+        <button onclick="copyLink('${r.id}')">Copy link</button>
+        <button onclick="openCompare('${r.id}')">Compare</button>
+        <button onclick="window.print()">Export PDF</button>
+      </div>
+    </div>
+
+    <div class="verdictBlock">${r.verdict||''}</div>
+    <div class="roleBlock">${r.role||''}</div>
+
+    <div class="twoCol">
+      <div class="panel">
+        <h3>Percentiles</h3>
+        ${pctHtml}
+        <div class="legendRow">
+          <span><span class="legendDot" style="background:var(--elite);"></span>Elite (80+)</span>
+          <span><span class="legendDot" style="background:var(--solid);"></span>Solid (50-79)</span>
+          <span><span class="legendDot" style="background:var(--workon);"></span>Work-on (under 50)</span>
+        </div>
+        ${r.percentileNote ? `<div class="pctNote">${r.percentileNote}</div>` : ''}
+        ${ratesHtml}
+      </div>
+      <div class="panel">
+        <h3>Radar</h3>
+        <canvas id="radarCanvas" width="280" height="280"></canvas>
+        <div class="swCol">
+          <h4>Strengths</h4>
+          <ul>${(r.strengths||[]).map(s=>`<li>${s}</li>`).join('')}</ul>
+        </div>
+        <div class="swCol weak">
+          <h4>Development</h4>
+          <ul>${(r.weaknesses||[]).map(w=>`<li>${w}</li>`).join('')}</ul>
+        </div>
+      </div>
+    </div>
+
+    ${r.callout && r.callout.title ? `
+      <div class="calloutPanel">
+        <h3>${r.callout.title}</h3>
+        <div>${r.callout.body||''}</div>
+      </div>` : ''}
+
+    ${r.projection && r.projection.title ? `
+      <div class="projectionPanel">
+        <h3>${r.projection.title}</h3>
+        <div>${r.projection.body||''}</div>
+      </div>` : ''}
+
+    ${(r.sources && r.sources.length) ? `<div class="sourcesLine">Sources: ${r.sources.join(', ')}</div>` : ''}
+  `;
+
+  drawRadar(r.percentiles||[]);
+  window.scrollTo(0,0);
+}
+
+function copyLink(id){
+  const url = location.origin + location.pathname + '#' + id;
+  navigator.clipboard.writeText(url).then(() => showToast('Link copied.'));
+}
+
+/* ---------- radar chart (vanilla canvas) ---------- */
+function drawRadar(percentiles){
+  const canvas = document.getElementById('radarCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const cx = w/2, cy = h/2, radius = Math.min(w,h)/2 - 30;
+  const n = percentiles.length || 1;
+  ctx.clearRect(0,0,w,h);
+
+  /* rings */
+  ctx.strokeStyle = '#E5E0E6';
+  for (let ring=1; ring<=4; ring++){
+    ctx.beginPath();
+    for (let i=0;i<=n;i++){
+      const angle = (Math.PI*2*i/n) - Math.PI/2;
+      const r = radius * (ring/4);
+      const x = cx + r*Math.cos(angle), y = cy + r*Math.sin(angle);
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+
+  /* axis labels */
+  ctx.fillStyle = '#7C7682';
+  ctx.font = '10px Inter, sans-serif';
+  percentiles.forEach((p,i) => {
+    const angle = (Math.PI*2*i/n) - Math.PI/2;
+    const x = cx + (radius+16)*Math.cos(angle), y = cy + (radius+16)*Math.sin(angle);
+    ctx.textAlign = Math.abs(Math.cos(angle)) < 0.2 ? 'center' : (Math.cos(angle) > 0 ? 'left' : 'right');
+    ctx.fillText((p.label||'').slice(0,14), x, y);
+  });
+
+  /* data polygon */
+  ctx.beginPath();
+  percentiles.forEach((p,i) => {
+    const angle = (Math.PI*2*i/n) - Math.PI/2;
+    const r = radius * (Math.min(p.pct,100)/100);
+    const x = cx + r*Math.cos(angle), y = cy + r*Math.sin(angle);
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(14,92,62,0.25)';
+  ctx.strokeStyle = '#0E5C3E';
+  ctx.lineWidth = 2;
+  ctx.fill();
+  ctx.stroke();
+}
+
+/* ---------- compare ---------- */
+function openCompare(id){
+  compareBase = REPORTS.find(r => r.id === id);
+  document.getElementById('compareOverlay').classList.add('open');
+  document.getElementById('compareSearch').value = '';
+  document.getElementById('compareResult').innerHTML = '';
+  renderCompareList('');
+}
+function closeCompare(){
+  document.getElementById('compareOverlay').classList.remove('open');
+}
+document.getElementById('compareSearch').addEventListener('input', (e) => renderCompareList(e.target.value));
+function renderCompareList(q){
+  q = q.toLowerCase();
+  const list = REPORTS.filter(r => r.id !== compareBase.id && r.name.toLowerCase().includes(q)).slice(0,8);
+  document.getElementById('compareList').innerHTML = list.map(r =>
+    `<div class="pickItem" onclick="renderComparison('${r.id}')">${r.name} — ${r.club}</div>`
+  ).join('');
+}
+function renderComparison(otherId){
+  const other = REPORTS.find(r => r.id === otherId);
+  const base = compareBase;
+  let rows;
+  if (base.universalMetrics && other.universalMetrics){
+    const keys = Object.keys(base.universalMetrics);
+    rows = keys.map(k => ({
+      label: k,
+      a: base.universalMetrics[k] ? `${base.universalMetrics[k].value} (${base.universalMetrics[k].pct}th)` : '—',
+      b: other.universalMetrics[k] ? `${other.universalMetrics[k].value} (${other.universalMetrics[k].pct}th)` : '—',
+    }));
+  } else {
+    rows = (base.percentiles||[]).map(p => {
+      const match = (other.percentiles||[]).find(x => x.label === p.label);
+      return { label: p.label, a: `${p.per90} (${p.pct}th)`, b: match ? `${match.per90} (${match.pct}th)` : '—' };
+    });
+  }
+  document.getElementById('compareResult').innerHTML = `
+    <table class="compareTable">
+      <tr><th></th><th>${base.name}</th><th>${other.name}</th></tr>
+      ${rows.map(r => `<tr><td>${r.label}</td><td>${r.a}</td><td>${r.b}</td></tr>`).join('')}
+    </table>
+  `;
+}
+
+/* ---------- subscribe ---------- */
+document.getElementById('subscribeForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('subEmail').value.trim();
+  const name = document.getElementById('subName').value.trim();
+  const { error } = await hubSb.from('subscribers').insert({ email, name });
+  const note = document.getElementById('subscribeNote');
+  note.style.display = 'block';
+  if (error){
+    note.textContent = 'Could not subscribe — try again, or check the email address.';
+  } else {
+    note.textContent = 'Subscribed. Thanks for following the work.';
+    document.getElementById('subscribeForm').reset();
+  }
+});
+
+/* ---------- init ---------- */
+loadReportsFromDB();
+</script>
+</body>
+</html>
