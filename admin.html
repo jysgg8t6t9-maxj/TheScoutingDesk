@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Scouting Desk — Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#16131A;--muted:#7C7682;--line:#E5E0E6;--paper:#F2F0F3;--card:#fff;--accent:#1565C0;--red:#922B21;--green:#1B6B3A;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);font-size:14px;}
+.hidden{display:none!important;}
+button{font-family:inherit;cursor:pointer;}
+
+/* LOGIN */
+#loginView{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.login-card{background:var(--ink);color:#fff;border-radius:12px;padding:40px;width:100%;max-width:380px;}
+.login-card h1{font-family:'Oswald',sans-serif;font-size:28px;text-transform:uppercase;letter-spacing:1px;margin:0 0 6px;}
+.login-card h1 span{color:#1CA4DA;}
+.login-card p{color:rgba(255,255,255,.6);font-size:13px;margin:0 0 28px;}
+.login-card input{width:100%;padding:11px 14px;border-radius:6px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);color:#fff;font-size:14px;font-family:'Inter',sans-serif;margin-bottom:12px;}
+.login-card input::placeholder{color:rgba(255,255,255,.4);}
+.login-card button{width:100%;padding:12px;border-radius:6px;border:none;background:#1565C0;color:#fff;font-size:14px;font-weight:600;cursor:pointer;}
+.login-error{color:#FF6B6B;font-size:12px;margin-top:8px;text-align:center;min-height:18px;}
+
+/* APP */
+#appView{display:none;min-height:100vh;}
+.topbar{background:var(--ink);color:#fff;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:50;}
+.topbar-brand{font-family:'Oswald',sans-serif;font-size:18px;letter-spacing:1px;text-transform:uppercase;}
+.topbar-brand span{color:#1CA4DA;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.topbar-user{font-size:12px;color:rgba(255,255,255,.6);}
+.logout-btn{background:rgba(255,255,255,.1);border:none;color:#fff;padding:6px 12px;border-radius:20px;cursor:pointer;font-size:12px;}
+
+/* NAV */
+nav{background:var(--card);border-bottom:1px solid var(--line);padding:0 24px;display:flex;gap:2px;overflow-x:auto;}
+.nav-btn{padding:12px 16px;border:none;background:none;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap;transition:.15s;}
+.nav-btn.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:600;}
+
+/* MAIN */
+.main{padding:24px;max-width:1100px;margin:0 auto;}
+.section-title{font-family:'Oswald',sans-serif;font-size:22px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:18px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:20px;margin-bottom:16px;}
+.card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+.card-head h3{font-weight:600;font-size:15px;}
+
+/* BUTTONS */
+.btn{padding:9px 16px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;font-weight:600;display:inline-flex;align-items:center;gap:6px;transition:.15s;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:#1251A3;}
+.btn-green{background:var(--green);color:#fff;}
+.btn-red{background:var(--red);color:#fff;}
+.btn-ghost{background:none;border:1px solid var(--line);color:var(--ink);}
+.btn-ghost:hover{border-color:var(--ink);}
+.btn-sm{padding:6px 11px;font-size:12px;}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:20px;}
+.stat-card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;}
+.stat-card .n{font-family:'Oswald',sans-serif;font-size:32px;font-weight:700;color:var(--accent);}
+.stat-card .l{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-top:2px;}
+
+/* REPORT LIST */
+.report-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap;}
+.report-row:last-child{border-bottom:none;}
+.report-dot{width:36px;height:36px;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;color:#fff;}
+.report-info{flex:1;min-width:120px;}
+.report-info .rname{font-weight:600;font-size:14px;}
+.report-info .rsub{font-size:12px;color:var(--muted);}
+.report-actions{display:flex;gap:6px;flex-wrap:wrap;}
+
+/* FORM */
+.form-section{margin-bottom:24px;}
+.form-section-title{font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--line);}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;}
+.field{display:flex;flex-direction:column;gap:5px;}
+.field label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+.field input,.field select,.field textarea{padding:9px 12px;border:1px solid var(--line);border-radius:6px;font-size:13px;font-family:'Inter',sans-serif;color:var(--ink);background:#fff;transition:.15s;}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent);}
+.field textarea{resize:vertical;min-height:80px;line-height:1.5;}
+.field-full{grid-column:1/-1;}
+.check-row{display:flex;align-items:center;gap:8px;margin-top:4px;}
+.check-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;}
+.check-row label{font-size:13px;cursor:pointer;}
+.colour-row{display:flex;align-items:center;gap:8px;}
+.colour-row input[type=color]{width:38px;height:38px;padding:2px;border-radius:4px;border:1px solid var(--line);cursor:pointer;}
+.colour-row input[type=text]{flex:1;}
+.metric-row{display:grid;grid-template-columns:1fr 90px 72px 28px;gap:8px;align-items:end;margin-bottom:8px;}
+.metric-row input{padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;font-family:'Inter',sans-serif;}
+.del-btn{width:28px;height:36px;background:none;border:1px solid var(--line);border-radius:4px;cursor:pointer;color:var(--muted);font-size:14px;}
+.src-row{display:flex;gap:8px;margin-bottom:8px;}
+.src-row input{flex:1;padding:8px 12px;border:1px solid var(--line);border-radius:6px;font-size:13px;font-family:'Inter',sans-serif;}
+.pos-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;}
+.pos-chip{padding:5px 11px;border:1px solid var(--line);border-radius:20px;cursor:pointer;font-size:12px;transition:.12s;}
+.pos-chip.on{background:var(--accent);color:#fff;border-color:var(--accent);}
+.form-actions{display:flex;gap:10px;flex-wrap:wrap;padding-top:20px;border-top:1px solid var(--line);margin-top:8px;}
+
+/* SUBSCRIBERS */
+.sub-row{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--line);}
+.sub-row:last-child{border-bottom:none;}
+
+/* EXPORT */
+.export-step{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--line);}
+.export-step:last-child{border-bottom:none;}
+.step-num{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+.step-body{flex:1;}
+.step-body strong{display:block;font-weight:600;margin-bottom:4px;}
+.step-body p{color:var(--muted);font-size:13px;margin:0 0 10px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;z-index:999;transform:translateY(80px);transition:.3s;pointer-events:none;}
+.toast.show{transform:translateY(0);}
+.toast.success{border-left:4px solid #4CAF50;}
+.toast.error{border-left:4px solid #FF5252;}
+
+/* ALERT */
+.alert{background:#FEF3C7;border:1px solid #F59E0B;border-radius:6px;padding:12px 16px;font-size:13px;margin-bottom:16px;}
+.alert strong{color:#92400E;}
+
+@media(max-width:600px){.main{padding:14px;}.metric-row{grid-template-columns:1fr 80px 60px 28px;}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginView">
+  <div class="login-card">
+    <h1>The Scouting <span>Desk</span></h1>
+    <p>Admin Panel — sign in to manage your reports</p>
+    <input id="loginEmail" type="email" placeholder="Email address" onkeydown="if(event.key==='Enter')login()">
+    <input id="loginPass" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')login()">
+    <button onclick="login()">Sign in</button>
+    <div id="loginError" class="login-error"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appView">
+  <div class="topbar">
+    <div class="topbar-brand">The Scouting <span>Desk</span> — Admin</div>
+    <div class="topbar-right">
+      <span class="topbar-user" id="topUser"></span>
+      <button class="logout-btn" onclick="logout()">Sign out</button>
+    </div>
+  </div>
+  <nav>
+    <button class="nav-btn on" onclick="showView('dashboard')">Dashboard</button>
+    <button class="nav-btn" onclick="showView('addEdit')">Add Report</button>
+    <button class="nav-btn" onclick="showView('subscribers')">Subscribers</button>
+    <button class="nav-btn" onclick="showView('export')">Export Hub</button>
+  </nav>
+  <div class="main" id="mainContent"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   CONFIG — paste your two values here and save
+   
+   SUPABASE_URL: your project URL from Supabase dashboard
+     Project Settings → API → Project URL
+     Looks like: https://xxxxxxxxxx.supabase.co
+   
+   SUPABASE_ANON_KEY: your publishable/anon key
+     Project Settings → API → Project API Keys → anon/public
+     Looks like: sb_publishable_xxxxx or eyJxxxxx...
+     
+   NEVER paste sb_secret_ keys here — admin uses email/password auth
+══════════════════════════════════════════════════════ */
+const SUPABASE_URL      = 'https://gpliaipmccgnzydpmvtv.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_eiPHSrZl9AyFH7GBHdzbWw_ih_ntMtl';
+
+/* ══════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════ */
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let allReports = [], allSubscribers = [], editingId = null;
+const POSITIONS = ['GK','CB','RB','LB','RWB','LWB','DM','CM','AM','RW','LW','ST'];
+const POS_GROUPS = ['Goalkeeper','Centre-back','Full-back','Midfielder','Winger','Striker'];
+
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) enterApp(session.user);
+}
+
+async function login() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  document.getElementById('loginError').textContent = '';
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) { document.getElementById('loginError').textContent = error.message; return; }
+  enterApp(data.user);
+}
+
+async function enterApp(user) {
+  document.getElementById('loginView').style.display  = 'none';
+  document.getElementById('appView').style.display    = 'block';
+  document.getElementById('topUser').textContent      = user.email;
+  await loadData();
+  showView('dashboard');
+}
+
+async function logout() {
+  await sb.auth.signOut();
+  document.getElementById('appView').style.display   = 'none';
+  document.getElementById('loginView').style.display = 'flex';
+}
+
+async function loadData() {
+  const [{ data: r }, { data: s }] = await Promise.all([
+    sb.from('reports').select('*').order('created_at', { ascending: false }),
+    sb.from('subscribers').select('*').order('subscribed_at', { ascending: false }),
+  ]);
+  allReports     = r || [];
+  allSubscribers = s || [];
+}
+
+/* ══════════════════════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════════════════════ */
+const VIEWS = ['dashboard','addEdit','subscribers','export'];
+function showView(name) {
+  document.querySelectorAll('.nav-btn').forEach((b,i) => b.classList.toggle('on', VIEWS[i] === name));
+  const c = document.getElementById('mainContent');
+  if (name === 'dashboard')   { c.innerHTML = renderDashboard(); }
+  if (name === 'addEdit')     { editingId = null; c.innerHTML = renderForm(null); }
+  if (name === 'subscribers') { c.innerHTML = renderSubscribers(); }
+  if (name === 'export')      { c.innerHTML = renderExport(); }
+}
+
+/* ══════════════════════════════════════════════════════
+   DASHBOARD
+══════════════════════════════════════════════════════ */
+function renderDashboard() {
+  const rows = allReports.length ? allReports.map(r => {
+    const d = r.data;
+    const claret = (d.theme?.claret || '#333').replace('#','');
+    return `<div class="report-row">
+      <div class="report-dot" style="background:#${claret}">${d.number || ''}</div>
+      <div class="report-info">
+        <div class="rname">${esc(d.name || 'Unnamed')}</div>
+        <div class="rsub">${esc(d.club || '')} &middot; ${esc(d.posGroup || '')} &middot; Age ${esc(d.meta?.Age || '')}</div>
+      </div>
+      <div class="report-actions">
+        <button class="btn btn-ghost btn-sm" onclick="editReport('${r.id}')">Edit</button>
+        <button class="btn btn-red btn-sm" onclick="deleteReport('${r.id}')">Delete</button>
+      </div>
+    </div>`;
+  }).join('') : '<div style="padding:20px;color:var(--muted);text-align:center;">No reports yet. Click Add Report to create your first one.</div>';
+
+  return `<div class="section-title">Dashboard</div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="n">${allReports.length}</div><div class="l">Reports</div></div>
+    <div class="stat-card"><div class="n">${allSubscribers.length}</div><div class="l">Subscribers</div></div>
+    <div class="stat-card"><div class="n">${new Set(allReports.map(r=>r.data?.league).filter(Boolean)).size}</div><div class="l">Leagues</div></div>
+  </div>
+  <div class="card">
+    <div class="card-head">
+      <h3>All Reports (${allReports.length})</h3>
+      <button class="btn btn-primary btn-sm" onclick="showView('addEdit')">+ Add Report</button>
+    </div>
+    ${rows}
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════════
+   ADD / EDIT FORM
+══════════════════════════════════════════════════════ */
+function editReport(id) {
+  editingId = id;
+  const r = allReports.find(r => r.id === id);
+  document.getElementById('mainContent').innerHTML = renderForm(r?.data);
+  document.querySelectorAll('.nav-btn').forEach((b,i) => b.classList.toggle('on', i === 1));
+}
+
+function renderForm(d) {
+  d = d || {};
+  const meta   = d.meta   || {};
+  const chips  = d.chips  || [];
+  const theme  = d.theme  || { claret:'#7A263A', blue:'#1CA4DA' };
+  const pos    = d.positions || [];
+  const pcts   = d.percentiles || [{label:'',per90:'',pct:''},{label:'',per90:'',pct:''},{label:'',per90:'',pct:''},{label:'',per90:'',pct:''},{label:'',per90:'',pct:''}];
+  const rates  = d.rates  || [];
+  const str    = d.strengths  || ['','',''];
+  const weak   = d.weaknesses || ['','',''];
+  const co     = d.callout    || {title:'',body:''};
+  const pr     = d.projection || {title:'',body:''};
+  const srcs   = d.sources    || [''];
+
+  const chipVal = (k, i) => { const c = chips.find(x => x.k === k); return esc(c?.v || ''); };
+
+  const posChips = POSITIONS.map(p =>
+    `<div class="pos-chip${pos.includes(p)?' on':''}" onclick="togglePos('${p}',this)">${p}</div>`
+  ).join('');
+
+  const metricRows = pcts.map((m,i) => `
+    <div class="metric-row" id="mrow-${i}">
+      <input placeholder="Metric label" id="ml-${i}" value="${esc(m.label||'')}">
+      <input placeholder="Per 90" id="mp-${i}" value="${esc(m.per90||'')}">
+      <input type="number" placeholder="Pct" min="0" max="99" id="mc-${i}" value="${m.pct||''}">
+      ${i>=3?`<button class="del-btn" onclick="rmRow('mrow-${i}')">&#215;</button>`:'<div></div>'}
+    </div>`).join('');
+
+  const rateRows = rates.map((r,i) => `
+    <div class="metric-row" id="rrow-${i}">
+      <input placeholder="Rate label" id="rl-${i}" value="${esc(r.label||'')}">
+      <input type="number" placeholder="%" min="0" max="100" id="rp-${i}" value="${r.pct||''}" style="grid-column:2/4;">
+      <button class="del-btn" onclick="rmRow('rrow-${i}')">&#215;</button>
+    </div>`).join('');
+
+  const srcRows = srcs.map((s,i) => `
+    <div class="src-row" id="srow-${i}">
+      <input placeholder="Source" id="src-${i}" value="${esc(s)}">
+      ${i>0?`<button class="btn btn-ghost btn-sm" onclick="rmRow('srow-${i}')">&#215;</button>`:''}
+    </div>`).join('');
+
+  return `
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+    <button class="btn btn-ghost" onclick="showView('dashboard')">&#8592; Back</button>
+    <div class="section-title" style="margin:0;">${editingId?'Edit Report':'Add New Report'}</div>
+  </div>
+  <div class="card">
+
+    <div class="form-section">
+      <div class="form-section-title">Flags and Settings</div>
+      <div class="form-grid">
+        <div class="field"><label>Shirt Number</label><input id="f-num" type="number" value="${d.number||''}"></div>
+        <div class="field"><label>Position Group (filter button)</label>
+          <select id="f-pg">${POS_GROUPS.map(g=>`<option value="${g}"${(d.posGroup||'')==g?' selected':''}>${g}</option>`).join('')}</select>
+        </div>
+        <div class="field"><label>League</label><input id="f-lg" value="${esc(d.league||'')}" placeholder="e.g. Premier League"></div>
+        <div class="field" style="justify-content:flex-end;gap:10px;">
+          <div class="check-row"><input type="checkbox" id="f-feat" ${d.featured?'checked':''}><label for="f-feat">Featured (pinned to Featured board)</label></div>
+          <div class="check-row"><input type="checkbox" id="f-wc" ${d.worldCup?'checked':''} onchange="toggleWC()"><label for="f-wc">World Cup report</label></div>
+        </div>
+        <div class="field hidden" id="wcDate"><label>Date Added (controls World Cup board order)</label><input id="f-da" type="date" value="${d.dateAdded||''}"></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Player Identity</div>
+      <div class="form-grid">
+        <div class="field"><label>Full Name *</label><input id="f-name" value="${esc(d.name||'')}" placeholder="e.g. Nestory Irankunda"></div>
+        <div class="field"><label>Club *</label><input id="f-club" value="${esc(d.club||'')}" placeholder="e.g. Watford"></div>
+        <div class="field field-full"><label>Pitch Map Positions (tap to toggle)</label><div class="pos-chips" id="posGrid">${posChips}</div></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Club / Nation Colours</div>
+      <div class="form-grid">
+        <div class="field"><label>Primary Colour (banner background)</label>
+          <div class="colour-row">
+            <input type="color" id="f-cp" value="${theme.claret.startsWith('#')?theme.claret:'#'+theme.claret}" oninput="sync('f-ct',this.value.slice(1))">
+            <input type="text" id="f-ct" value="${theme.claret.replace('#','')}" maxlength="6" placeholder="hex e.g. 7A263A" oninput="sync2('f-cp','#'+this.value)">
+          </div>
+        </div>
+        <div class="field"><label>Accent Colour (labels and highlights)</label>
+          <div class="colour-row">
+            <input type="color" id="f-bp" value="${theme.blue.startsWith('#')?theme.blue:'#'+theme.blue}" oninput="sync('f-bt',this.value.slice(1))">
+            <input type="text" id="f-bt" value="${theme.blue.replace('#','')}" maxlength="6" placeholder="hex e.g. 1CA4DA" oninput="sync2('f-bp','#'+this.value)">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Player Bio</div>
+      <div class="form-grid">
+        <div class="field"><label>Position (displayed in banner)</label><input id="f-pos" value="${esc(meta.Position||'')}" placeholder="e.g. Left-back / Left wing-back"></div>
+        <div class="field"><label>Age</label><input id="f-age" value="${esc(meta.Age||'')}" placeholder="e.g. 20"></div>
+        <div class="field"><label>Preferred Foot</label>
+          <select id="f-foot">${['Left','Right','Both'].map(f=>`<option${(meta.Foot||'')==f?' selected':''}>${f}</option>`).join('')}</select>
+        </div>
+        <div class="field"><label>Nationality</label><input id="f-nat" value="${esc(meta.Nationality||'')}" placeholder="e.g. Australia"></div>
+        <div class="field"><label>Date of Birth</label><input id="f-born" value="${esc(meta.Born||'')}" placeholder="e.g. 09 Feb 2006"></div>
+        <div class="field"><label>Market Value</label><input id="f-mv" value="${chipVal('Market value','mv')}" placeholder="e.g. €8.0m"></div>
+        <div class="field"><label>Fee</label><input id="f-fee" value="${chipVal('Fee','fee')}" placeholder="e.g. €3.5m or Undisclosed"></div>
+        <div class="field"><label>Contract</label><input id="f-con" value="${chipVal('Contract','con')}" placeholder="e.g. to 2028"></div>
+        <div class="field"><label>Date Compiled</label><input id="f-gen" value="${esc(d.generated||'')}" placeholder="e.g. 18 June 2026"></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Report Content</div>
+      <div class="form-grid">
+        <div class="field field-full"><label>Scout Verdict (bold intro — first sentence shown on card)</label><textarea id="f-vd" rows="3">${esc(d.verdict||'')}</textarea></div>
+        <div class="field field-full"><label>Profile and Role</label><textarea id="f-rl" rows="5">${esc(d.role||'')}</textarea></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Statistical Metrics (Per 90)</div>
+      <div style="display:grid;grid-template-columns:1fr 90px 72px 28px;gap:8px;margin-bottom:8px;">
+        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Metric Label</div>
+        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Per 90</div>
+        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Percentile</div>
+        <div></div>
+      </div>
+      <div id="metContainer">${metricRows}</div>
+      <button class="btn btn-ghost btn-sm" onclick="addMetric()" style="margin-top:6px;">+ Add metric</button>
+      <div class="field" style="margin-top:14px;"><label>Percentile Note (data source context)</label><textarea id="f-pn" rows="2">${esc(d.percentileNote||'')}</textarea></div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Duel Success Rates (optional)</div>
+      <div id="rateContainer">${rateRows}</div>
+      <button class="btn btn-ghost btn-sm" onclick="addRate()" style="margin-top:6px;">+ Add rate</button>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Strengths</div>
+      <div class="form-grid">${str.map((s,i)=>`<div class="field field-full"><label>Strength ${i+1}</label><textarea id="f-st${i}" rows="2">${esc(s)}</textarea></div>`).join('')}</div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Development Areas</div>
+      <div class="form-grid">${weak.map((w,i)=>`<div class="field field-full"><label>Development Area ${i+1}</label><textarea id="f-wk${i}" rows="2">${esc(w)}</textarea></div>`).join('')}</div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Context</div>
+      <div class="form-grid">
+        <div class="field field-full"><label>Context Title (the key question)</label><input id="f-ct2" value="${esc(co.title||'')}" placeholder="e.g. Is the hype real?"></div>
+        <div class="field field-full"><label>Context Body</label><textarea id="f-cb" rows="4">${esc(co.body||'')}</textarea></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Projection and Risk</div>
+      <div class="form-grid">
+        <div class="field field-full"><label>Projection Title</label><input id="f-pt" value="${esc(pr.title||'')}" placeholder="e.g. Projection and risk"></div>
+        <div class="field field-full"><label>Projection Body</label><textarea id="f-pb" rows="4">${esc(pr.body||'')}</textarea></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Sources</div>
+      <div id="srcContainer">${srcRows}</div>
+      <button class="btn btn-ghost btn-sm" onclick="addSource()" style="margin-top:6px;">+ Add source</button>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" onclick="saveReport()">${editingId?'Save Changes':'Save Report'}</button>
+      <button class="btn btn-ghost" onclick="showView('dashboard')">Cancel</button>
+    </div>
+  </div>`;
+}
+
+/* form helpers */
+function sync(targetId, val)  { const el=document.getElementById(targetId); if(el) el.value=val; }
+function sync2(targetId, val) { const el=document.getElementById(targetId); if(el) el.value=val; }
+function toggleWC()   { const on=document.getElementById('f-wc').checked; document.getElementById('wcDate').classList.toggle('hidden',!on); }
+function togglePos(p,el) { el.classList.toggle('on'); }
+function rmRow(id)    { document.getElementById(id)?.remove(); }
+
+let _mc=5, _rc=0, _sc=1;
+function addMetric() {
+  const i=_mc++;
+  const d=document.createElement('div'); d.className='metric-row'; d.id='mrow-'+i;
+  d.innerHTML=`<input placeholder="Metric label" id="ml-${i}"><input placeholder="Per 90" id="mp-${i}"><input type="number" placeholder="Pct" min="0" max="99" id="mc-${i}"><button class="del-btn" onclick="rmRow('mrow-${i}')">&#215;</button>`;
+  document.getElementById('metContainer').appendChild(d);
+}
+function addRate() {
+  const i=_rc++;
+  const d=document.createElement('div'); d.className='metric-row'; d.id='rrow-'+i;
+  d.innerHTML=`<input placeholder="Rate label" id="rl-${i}"><input type="number" placeholder="%" min="0" max="100" id="rp-${i}" style="grid-column:2/4;"><button class="del-btn" onclick="rmRow('rrow-${i}')">&#215;</button>`;
+  document.getElementById('rateContainer').appendChild(d);
+}
+function addSource() {
+  const i=_sc++;
+  const d=document.createElement('div'); d.className='src-row'; d.id='srow-'+i;
+  d.innerHTML=`<input placeholder="Source" id="src-${i}"><button class="btn btn-ghost btn-sm" onclick="rmRow('srow-${i}')">&#215;</button>`;
+  document.getElementById('srcContainer').appendChild(d);
+}
+
+function collectForm() {
+  const gv = id => document.getElementById(id)?.value?.trim() || '';
+  const name = gv('f-name');
+  if (!name) { toast('Player name is required','error'); return null; }
+  const id = editingId || name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  const positions = [...document.querySelectorAll('.pos-chip.on')].map(e => e.textContent);
+  const percentiles=[], rates=[], sources=[];
+  document.querySelectorAll('.metric-row[id^="mrow-"]').forEach(row=>{
+    const i=row.id.split('-')[1];
+    const label=gv('ml-'+i), per90=gv('mp-'+i), pct=parseInt(document.getElementById('mc-'+i)?.value)||0;
+    if(label) percentiles.push({label,per90,pct});
+  });
+  document.querySelectorAll('.metric-row[id^="rrow-"]').forEach(row=>{
+    const i=row.id.split('-')[1];
+    const label=gv('rl-'+i), pct=parseInt(document.getElementById('rp-'+i)?.value)||0;
+    if(label) rates.push({label,pct});
+  });
+  document.querySelectorAll('.src-row input').forEach(inp=>{if(inp.value.trim())sources.push(inp.value.trim());});
+  return {
+    id, name,
+    club:     gv('f-club'), league: gv('f-lg'), posGroup: gv('f-pg'),
+    number:   parseInt(gv('f-num'))||null, positions,
+    featured: document.getElementById('f-feat')?.checked||false,
+    worldCup: document.getElementById('f-wc')?.checked||false,
+    dateAdded:gv('f-da')||null, image:null,
+    theme:{ claret:'#'+gv('f-ct').replace('#',''), blue:'#'+gv('f-bt').replace('#','') },
+    meta:{ Position:gv('f-pos'), Age:gv('f-age'), Foot:gv('f-foot'), Nationality:gv('f-nat'), Born:gv('f-born') },
+    chips:[{k:'Market value',v:gv('f-mv')},{k:'Fee',v:gv('f-fee')},{k:'Contract',v:gv('f-con')}],
+    verdict:gv('f-vd'), role:gv('f-rl'), percentiles, percentileNote:gv('f-pn'), rates,
+    strengths: [gv('f-st0'),gv('f-st1'),gv('f-st2')].filter(Boolean),
+    weaknesses:[gv('f-wk0'),gv('f-wk1'),gv('f-wk2')].filter(Boolean),
+    callout:   {title:gv('f-ct2'), body:gv('f-cb')},
+    projection:{title:gv('f-pt'),  body:gv('f-pb')},
+    sources, generated:gv('f-gen'),
+  };
+}
+
+async function saveReport() {
+  const data = collectForm(); if(!data) return;
+  const { error } = await sb.from('reports').upsert({ id:data.id, data, updated_at:new Date().toISOString() });
+  if(error){ toast('Error saving: '+error.message,'error'); return; }
+  toast('Report saved','success');
+  await loadData(); showView('dashboard');
+}
+
+async function deleteReport(id) {
+  if(!confirm('Delete this report? This cannot be undone.')) return;
+  await sb.from('reports').delete().eq('id',id);
+  toast('Report deleted','success');
+  await loadData(); showView('dashboard');
+}
+
+/* ══════════════════════════════════════════════════════
+   SUBSCRIBERS
+══════════════════════════════════════════════════════ */
+function renderSubscribers() {
+  const rows = allSubscribers.length ? allSubscribers.map(s=>`
+    <div class="sub-row">
+      <div>
+        <div style="font-weight:600;">${esc(s.email)}</div>
+        <div style="font-size:12px;color:var(--muted);">${s.name?esc(s.name)+' &middot; ':''}Joined ${new Date(s.subscribed_at).toLocaleDateString('en-GB')}</div>
+      </div>
+      <button class="btn btn-red btn-sm" onclick="deleteSub('${s.id}')">Remove</button>
+    </div>`).join('') : '<div style="padding:20px;text-align:center;color:var(--muted);">No subscribers yet.</div>';
+
+  return `<div class="section-title">Subscribers</div>
+  <div class="card">
+    <div class="card-head">
+      <h3>${allSubscribers.length} subscriber${allSubscribers.length!==1?'s':''}</h3>
+      <button class="btn btn-ghost btn-sm" onclick="exportCSV()">Export CSV</button>
+    </div>
+    ${rows}
+  </div>`;
+}
+
+async function deleteSub(id) {
+  if(!confirm('Remove this subscriber?')) return;
+  await sb.from('subscribers').delete().eq('id',id);
+  toast('Subscriber removed','success');
+  await loadData(); showView('subscribers');
+}
+
+function exportCSV() {
+  const csv='Email,Name,Joined\n'+allSubscribers.map(s=>`${s.email},${s.name||''},${new Date(s.subscribed_at).toLocaleDateString('en-GB')}`).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='scouting-desk-subscribers.csv'; a.click();
+}
+
+/* ══════════════════════════════════════════════════════
+   EXPORT HUB
+══════════════════════════════════════════════════════ */
+function renderExport() {
+  return `<div class="section-title">Export Hub</div>
+  <div class="card">
+    <p style="color:var(--muted);font-size:13px;margin-bottom:20px;">
+      Upload your current hub HTML file. The admin will inject all ${allReports.length} saved reports
+      and download a new updated file ready to drag to Netlify.
+    </p>
+    <div class="export-step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <strong>Upload your current hub file</strong>
+        <input type="file" id="hubFile" accept=".html" style="margin-top:6px;font-size:13px;">
+      </div>
+    </div>
+    <div class="export-step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <strong>Click Export</strong>
+        <p>The ${allReports.length} reports in your database will be injected into the file.</p>
+        <button class="btn btn-primary" onclick="exportHub()">Export Updated Hub (${allReports.length} reports)</button>
+      </div>
+    </div>
+    <div class="export-step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <strong>Drag the downloaded file to Netlify</strong>
+        <p>Go to <strong>app.netlify.com/drop</strong> and drop the new file to publish.</p>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function exportHub() {
+  const fi = document.getElementById('hubFile');
+  if(!fi?.files?.length){ toast('Please upload your hub HTML file first','error'); return; }
+  const text = await fi.files[0].text();
+  const reportsJS = 'const REPORTS = ' + JSON.stringify(allReports.map(r=>r.data), null, 2) + ';';
+  let updated;
+  const ms='/* __REPORTS_START__ */', me='/* __REPORTS_END__ */';
+  if(text.includes(ms) && text.includes(me)){
+    const re=new RegExp(ms.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'[\\s\\S]*?'+me.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));
+    updated=text.replace(re, ms+'\n'+reportsJS+'\n'+me);
+  } else {
+    const start=text.indexOf('const REPORTS = [');
+    if(start===-1){ toast('Could not find REPORTS array in the uploaded file','error'); return; }
+    let depth=0, i=start+'const REPORTS = '.length;
+    while(i<text.length){ if(text[i]==='[')depth++; else if(text[i]===']'){depth--;if(depth===0){i++;break;}} i++; }
+    if(text[i]===';')i++;
+    updated=text.slice(0,start)+reportsJS+text.slice(i);
+  }
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([updated],{type:'text/html'}));
+  a.download='Scouting-Hub-Updated.html'; a.click();
+  toast('Hub exported. Drag to Netlify to publish.','success');
+}
+
+/* ══════════════════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════════════════ */
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function toast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+type+' show';
+  setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+/* ══════════════════════════════════════════════════════
+   START
+══════════════════════════════════════════════════════ */
+init();
+</script>
+</body>
+</html>

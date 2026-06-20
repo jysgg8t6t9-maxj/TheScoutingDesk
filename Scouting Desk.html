@@ -1,0 +1,1555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Scouting Desk: Player Portfolio</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#16131A;--muted:#7C7682;--line:#E5E0E6;--paper:#F2F0F3;
+  --card:#FFFFFF;--pitch:#0E5C3E;--grey:#C2B8BC;
+  --wc-bg:#003380;--wc-gold:#FFC300;--wc-orange:#FF6B35;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;}
+body{background:var(--paper);color:var(--ink);font-family:"Inter",system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px;}
+.hidden{display:none !important;}
+button{font-family:inherit;cursor:pointer;}
+
+/* ── MASTHEAD ── */
+.mast{padding:36px 0 22px;border-bottom:2px solid var(--ink);margin-bottom:26px;}
+.mast .eyebrow{font-family:"Oswald",sans-serif;text-transform:uppercase;letter-spacing:4px;font-size:12px;color:var(--pitch);margin:0 0 6px;}
+.mast h1{font-family:"Oswald",sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:1px;font-size:clamp(28px,5vw,44px);margin:0;line-height:1;}
+.mast .tag{color:var(--muted);font-size:15px;margin:10px 0 0;}
+.stats{display:flex;gap:26px;flex-wrap:wrap;margin-top:16px;}
+.stat .n{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:22px;}
+.stat .l{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+
+/* ── FILTERS ── */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px;}
+.filters button{background:var(--card);border:1px solid var(--line);border-radius:30px;padding:7px 15px;font-size:13px;color:var(--ink);transition:.15s;white-space:nowrap;}
+.filters button:hover{border-color:var(--ink);}
+.filters button.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+.filters button.wc-btn{background:var(--wc-bg);color:var(--wc-gold);border-color:var(--wc-bg);font-weight:700;letter-spacing:.5px;}
+.filters button.wc-btn:hover{background:#004BB8;}
+.filters button.back-btn{background:#F5F0F2;border-color:var(--line);font-weight:600;}
+
+/* ── BOARD ── */
+.board{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px;padding-bottom:50px;}
+
+/* ── PLAYER CARDS ── */
+.pcard{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden;text-align:left;padding:0;transition:.18s;display:flex;flex-direction:column;}
+.pcard:hover{transform:translateY(-3px);box-shadow:0 16px 34px -22px rgba(20,8,16,.5);border-color:var(--c,#999);}
+.pcard .top{padding:16px 18px;color:#fff;position:relative;overflow:hidden;}
+.pcard .ghost{position:absolute;right:-6px;top:-26px;font-family:"Oswald",sans-serif;font-weight:700;font-size:110px;line-height:1;color:rgba(0,0,0,.15);}
+.pcard .club{position:relative;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;opacity:.85;}
+.pcard .nm{position:relative;font-family:"Oswald",sans-serif;font-weight:600;font-size:23px;line-height:1.05;text-transform:uppercase;margin-top:3px;}
+.pcard .sub{position:relative;font-size:12.5px;opacity:.9;margin-top:6px;}
+.pcard .body{padding:14px 18px 16px;flex:1;display:flex;flex-direction:column;gap:12px;}
+.pcard .vt{font-size:13.5px;color:#34303a;line-height:1.45;}
+.pcard .badge{align-self:flex-start;margin-top:auto;font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:600;background:#F1EEF2;border-radius:5px;padding:5px 9px;}
+.pcard .badge b{color:var(--c,#333);}
+.pcard .feat-star{position:absolute;top:12px;right:12px;background:var(--wc-gold);color:#1A1200;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;line-height:1;}
+
+/* ── ADD TILE ── */
+.addtile{border:1.5px dashed var(--line);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px 18px;color:var(--muted);min-height:200px;}
+.addtile .plus{font-family:"Oswald",sans-serif;font-size:34px;color:var(--line);}
+.addtile p{margin:10px 0 0;font-size:13px;max-width:200px;}
+
+/* ── WORLD CUP ── */
+.wc-view{padding-bottom:50px;}
+.wc-banner{position:relative;background:var(--wc-bg);overflow:hidden;border-radius:8px;margin-bottom:22px;padding:30px 24px 24px;color:#fff;}
+.wc-banner::before{content:'';position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,#FFC300 0%,#FF6B35 50%,#FFC300 100%);}
+.wc-banner::after{content:'';position:absolute;top:-60px;right:-60px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(255,195,0,.18) 0%,transparent 70%);pointer-events:none;}
+.wc-deco{position:absolute;bottom:-40px;left:20%;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(255,107,53,.14) 0%,transparent 70%);pointer-events:none;}
+.wc-ghost{position:absolute;right:18px;bottom:-18px;font-family:"Oswald",sans-serif;font-weight:700;font-size:110px;line-height:1;color:rgba(255,195,0,.10);letter-spacing:-4px;pointer-events:none;user-select:none;}
+.wc-eyebrow{font-family:"Oswald",sans-serif;font-weight:500;letter-spacing:4px;font-size:11px;color:var(--wc-gold);text-transform:uppercase;margin:0 0 8px;position:relative;}
+.wc-title{font-family:"Oswald",sans-serif;font-weight:700;font-size:clamp(34px,7vw,56px);line-height:.95;text-transform:uppercase;letter-spacing:.5px;color:#fff;margin:0;position:relative;}
+.wc-title span{color:var(--wc-gold);}
+.wc-sub{font-size:13.5px;color:rgba(255,255,255,.75);margin-top:12px;position:relative;}
+.wc-meta{display:flex;gap:20px;flex-wrap:wrap;margin-top:16px;position:relative;}
+.wc-stat .n{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:20px;color:var(--wc-gold);}
+.wc-stat .l{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.6);}
+.wc-back{background:none;border:1px solid rgba(255,255,255,.25);border-radius:30px;padding:8px 16px;font-size:13px;color:rgba(255,255,255,.8);margin-top:16px;display:inline-block;position:relative;transition:.15s;}
+.wc-back:hover{border-color:var(--wc-gold);color:var(--wc-gold);}
+
+/* ── COMPARE OVERLAY ── */
+.compare-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(22,19,26,.55);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;}
+.compare-panel{background:#fff;border-radius:10px;width:100%;max-width:480px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px -20px rgba(0,0,0,.5);}
+.compare-panel-head{padding:18px 20px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;}
+.compare-panel-head h3{font-family:"Oswald",sans-serif;font-size:20px;text-transform:uppercase;letter-spacing:.5px;margin:0;}
+.compare-panel-head button{background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;padding:4px 8px;}
+.compare-search-wrap{padding:14px 16px 10px;}
+.compare-search-input{width:100%;padding:10px 14px;border:1px solid var(--line);border-radius:30px;font-size:14px;font-family:"Inter",sans-serif;outline:none;}
+.compare-results{overflow-y:auto;padding:0 10px 12px;}
+.compare-result-item{display:flex;align-items:center;gap:12px;padding:10px;border-radius:6px;cursor:pointer;transition:.12s;}
+.compare-result-item:hover{background:#F5F2F6;}
+.compare-result-dot{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:"Oswald",sans-serif;font-size:11px;font-weight:700;color:#fff;}
+.compare-result-name{font-weight:600;font-size:14px;}
+.compare-result-sub{font-size:12px;color:var(--muted);}
+.compare-empty{padding:20px;text-align:center;color:var(--muted);font-size:13px;}
+
+/* ── REPORT DETAIL ── */
+.report-view{padding:18px 0 60px;}
+.report-view-actions{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
+.backbtn{background:none;border:1px solid var(--line);border-radius:30px;padding:8px 16px;font-size:13px;color:var(--ink);}
+.backbtn:hover{border-color:var(--ink);}
+.report{background:var(--card);border:1px solid var(--line);border-radius:6px;overflow:hidden;box-shadow:0 18px 50px -30px rgba(40,10,20,.4);}
+.np{position:relative;background:var(--claret);color:#fff;padding:20px 22px;overflow:hidden;border-radius:5px 5px 0 0;}
+.np-ghost{position:absolute;right:6px;top:-38px;font-family:"Oswald",sans-serif;font-weight:700;font-size:150px;line-height:1;color:rgba(255,255,255,.08);letter-spacing:-8px;pointer-events:none;}
+.eb{text-transform:uppercase;letter-spacing:2.5px;font-size:8px;color:var(--blue);margin-bottom:4px;}
+.np h2{font-family:"Oswald",sans-serif;font-weight:700;font-size:clamp(30px,5.5vw,50px);line-height:.98;margin:0;text-transform:uppercase;letter-spacing:.5px;}
+.np-meta{display:flex;flex-wrap:wrap;gap:5px 16px;margin-top:14px;font-size:13px;color:rgba(255,255,255,.86);}
+.np-meta b{color:#fff;font-weight:600;}
+.np-meta .dot{color:var(--blue);}
+.np-right{display:flex;flex-direction:column;gap:13px;align-items:flex-end;justify-content:center;}
+.chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-start;margin-top:14px;}
+.chip{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16);border-radius:4px;padding:6px 11px;}
+.chip .k{display:block;font-size:9.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--blue);}
+.chip .v{display:block;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:14px;color:#fff;margin-top:2px;}
+.pitch-wrap{width:250px;}
+.pitch-cap{font-size:8px;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,.7);margin-top:3px;}
+.np-grid{position:relative;display:flex;gap:26px;justify-content:space-between;flex-wrap:wrap;}
+.np-left{min-width:240px;flex:1;}
+.verdict-block{background:#fff;border:1px solid #E7DFE2;border-top:none;border-left:4px solid var(--claret);padding:14px 20px;}
+.verdict-block .eb2{text-transform:uppercase;letter-spacing:2px;font-size:8px;color:var(--claret);margin-bottom:3px;}
+.verdict-block p{margin:2px 0 0;font-size:15px;font-weight:600;line-height:1.45;}
+.block{background:#fff;border:1px solid #E7DFE2;border-top:none;padding:12px 20px;}
+.eb2{text-transform:uppercase;letter-spacing:2px;font-size:8px;color:var(--claret);margin-bottom:3px;}
+.bt{font-family:"Oswald",sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.5px;font-size:16px;margin-bottom:10px;}
+.lede{font-size:13px;color:#34272c;line-height:1.6;}
+.legend{display:flex;gap:18px;flex-wrap:wrap;margin:0 0 12px;font-size:11px;color:var(--muted);}
+.legend span{display:inline-flex;align-items:center;gap:5px;}
+.legend i{width:9px;height:9px;border-radius:2px;display:inline-block;}
+.bar{display:grid;grid-template-columns:170px 1fr 48px;align-items:center;gap:12px;margin:8px 0;}
+.bar-label{font-size:12px;font-weight:500;}
+.bar-label small{display:block;font-family:"IBM Plex Mono",monospace;color:var(--muted);font-size:10px;margin-top:1px;}
+.track{background:#EFEAEC;border-radius:3px;height:13px;overflow:hidden;}
+.fill{height:100%;width:0;border-radius:3px;transition:width .9s cubic-bezier(.22,1,.36,1);}
+.pct{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:16px;text-align:right;}
+.pct small{font-size:9px;color:var(--muted);}
+.rates{display:flex;gap:26px;flex-wrap:wrap;margin-top:10px;}
+.rate{flex:1;min-width:160px;}
+.rate-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;}
+.rate-top .lab{font-size:12px;font-weight:500;}
+.rate-top .num{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:16px;}
+.rate-track{background:#EFEAEC;border-radius:3px;height:9px;overflow:hidden;}
+.rate-fill{height:9px;width:0;border-radius:3px;background:var(--muted);transition:width .9s cubic-bezier(.22,1,.36,1);}
+.note{font-size:10px;color:var(--muted);margin-top:10px;}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:26px;}
+.col h4{font-family:"Oswald",sans-serif;text-transform:uppercase;letter-spacing:1px;font-size:12px;margin:0 0 8px;}
+/* FIXED: these use hard colours so they never vanish against a white background */
+.col.s h4{color:#1565C0;}
+.col.w h4{color:#822D3A;}
+.col ul{list-style:none;margin:0;padding:0;}
+.col li{position:relative;padding-left:14px;margin-bottom:8px;font-size:12.5px;line-height:1.5;}
+.col.s li:before{content:"+";position:absolute;left:0;color:#1565C0;font-weight:bold;}
+.col.w li:before{content:"\2013";position:absolute;left:0;color:#822D3A;font-weight:bold;}
+.callout{background:#FBF7F4;border:1px solid #E7DFE2;border-radius:4px;padding:12px 14px;}
+.callout p{margin:0;font-size:12px;color:#34272c;line-height:1.6;}
+.foot-r{border:1px solid #E7DFE2;border-top:none;border-radius:0 0 6px 6px;background:#FBF9F8;padding:12px 20px;font-size:10px;color:var(--muted);}
+.foot-r .method{color:var(--claret);font-weight:600;margin-bottom:8px;font-size:10.5px;}
+.foot-r .fr{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.foot-r b{color:#4a3b40;}
+
+/* ── SUBSCRIBE FORM ── */
+.sub-form{background:var(--ink);border-radius:8px;padding:28px 24px;margin:40px 0;color:#fff;}
+.sub-form h3{font-family:"Oswald",sans-serif;font-size:22px;text-transform:uppercase;letter-spacing:.5px;margin:0 0 6px;}
+.sub-form p{font-size:13px;color:rgba(255,255,255,.65);margin:0 0 20px;}
+.sub-inputs{display:flex;gap:10px;flex-wrap:wrap;}
+.sub-inputs input{flex:1;min-width:160px;padding:10px 14px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:13px;font-family:"Inter",sans-serif;}
+.sub-inputs input::placeholder{color:rgba(255,255,255,.4);}
+.sub-inputs button{padding:10px 20px;border-radius:6px;border:none;background:#1CA4DA;color:#fff;font-size:13px;font-weight:600;font-family:"Inter",sans-serif;cursor:pointer;white-space:nowrap;}
+.sub-msg{margin-top:10px;font-size:13px;color:rgba(255,255,255,.75);}
+
+/* ── RESPONSIVE ── */
+@media(max-width:600px){
+  .np,.verdict-block,.block,.foot-r{padding-left:16px;padding-right:16px;}
+  .np-ghost{font-size:110px;}
+  .bar{grid-template-columns:120px 1fr 44px;gap:8px;}
+  .cols{grid-template-columns:1fr;gap:16px;}
+  .np-right{align-items:flex-start;}
+  .pitch-wrap{width:100%;}
+  .wc-banner{border-radius:6px;padding:24px 18px 20px;}
+}
+@media print{
+  body{background:#fff;}
+  #boardView,#worldCupView,#compareOverlay,
+  .report-view-actions,.sub-form,
+  #searchInput,.filters{display:none!important;}
+  .report-view{padding:0;}
+  .wrap{padding:0;max-width:none;}
+  .report{box-shadow:none;border:none;border-radius:0;}
+  .block,.verdict-block,.foot-r{break-inside:avoid;}
+  .np{border-radius:0;}
+  .fill{transition:none;}
+}
+@media(prefers-reduced-motion:reduce){.fill,.rate-fill,.pcard{transition:none;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ═══ COMPARE OVERLAY ════════════════════════════════════════ -->
+  <div id="compareOverlay" class="compare-overlay hidden" onclick="closeCompareSearch(event)">
+    <div class="compare-panel" onclick="event.stopPropagation()">
+      <div class="compare-panel-head">
+        <h3>Compare with</h3>
+        <button onclick="closeCompareSearch()">&#10005;</button>
+      </div>
+      <div class="compare-search-wrap">
+        <input id="compareSearchInput" class="compare-search-input"
+          type="text" placeholder="Search players, clubs, positions..."
+          oninput="filterCompareList(this.value)">
+      </div>
+      <div class="compare-results" id="compareResults"></div>
+    </div>
+  </div>
+
+  <!-- ═══ BOARD VIEW ══════════════════════════════════════════════ -->
+  <div id="boardView">
+    <header class="mast">
+      <p class="eyebrow" id="siteEyebrow"></p>
+      <h1 id="siteName"></h1>
+      <p class="tag" id="siteTag"></p>
+      <div class="stats" id="siteStats"></div>
+    </header>
+    <div style="margin-bottom:14px;">
+      <input id="searchInput" type="text"
+        placeholder="Search players, clubs, leagues..."
+        oninput="handleSearch(this.value)"
+        style="width:100%;padding:10px 16px;border:1px solid #E5E0E6;
+               border-radius:30px;font-size:14px;font-family:'Inter',sans-serif;
+               background:#fff;outline:none;color:#16131A;">
+    </div>
+    <div class="filters" id="mainFilters"></div>
+    <div class="filters hidden" id="posFilters"></div>
+    <div class="board" id="board"></div>
+  </div>
+
+  <!-- ═══ WORLD CUP VIEW ══════════════════════════════════════════ -->
+  <div id="worldCupView" class="hidden wc-view">
+    <div class="wc-banner">
+      <div class="wc-deco"></div>
+      <div class="wc-ghost">26</div>
+      <p class="wc-eyebrow">The Scouting Desk</p>
+      <h2 class="wc-title">World Cup <span>2026</span></h2>
+      <p class="wc-sub">Tournament player profiles and recruitment analysis</p>
+      <div class="wc-meta" id="wcMeta"></div>
+      <button class="wc-back" onclick="showBoard()">&#8592; Back to Main Board</button>
+    </div>
+    <div class="board" id="wcBoard"></div>
+  </div>
+
+  <!-- ═══ REPORT VIEW ══════════════════════════════════════════════ -->
+  <div id="reportView" class="report-view hidden">
+    <div class="report-view-actions">
+      <button class="backbtn" id="backBtn" onclick="goBack()">&#8592; Back</button>
+      <button class="backbtn" onclick="openCompareSearch()"
+        style="background:#16131A;color:#fff;border-color:#16131A;">&#8644; Compare</button>
+      <button class="backbtn export-btn" onclick="window.print()"
+        style="background:#444;color:#fff;border-color:#444;">&#8595; Export PDF</button>
+    </div>
+    <div class="report" id="report"></div>
+  </div>
+
+  <!-- ═══ SUBSCRIBE FORM ══════════════════════════════════════════ -->
+  <div class="sub-form" id="subFormBlock">
+    <h3>Stay in the loop</h3>
+    <p>Get an email when a new scouting report drops. No spam, unsubscribe anytime.</p>
+    <div class="sub-inputs" id="subForm">
+      <input id="subName" type="text" placeholder="Your name (optional)">
+      <input id="subEmail" type="email" placeholder="Email address">
+      <button onclick="subscribe()">Subscribe</button>
+    </div>
+    <div class="sub-msg" id="subMsg"></div>
+  </div>
+
+</div><!-- /.wrap -->
+
+<script>
+/* ══ SUPABASE — add your keys here for the subscribe form ══ */
+const HUB_SUPABASE_URL = 'sb_publishable_eiPHSrZl9AyFH7GBHdzbWw_ih_ntMtl';
+const HUB_SUPABASE_KEY = 'sb_secret_mwKz7Gx5sU3OV6BTW2TZMQ_9fMsWflW';
+let hubSb = null;
+try { hubSb = supabase.createClient(HUB_SUPABASE_URL, HUB_SUPABASE_KEY); } catch(e){}
+
+/* ══ SITE BRANDING ══ */
+const SITE = {
+  eyebrow: 'Independent Scouting',
+  name:    'The Scouting Desk',
+  tagline: 'Player analysis, profiles and recruitment notes.',
+  author:  'Ben Martin',
+};
+
+/* ══ REPORTS ══ */
+/* __REPORTS_START__ */
+const REPORTS = [
+  {
+    "id": "nestory-irankunda",
+    "club": "Watford",
+    "meta": {
+      "Age": "20",
+      "Born": "09 February 2006",
+      "Foot": "Right",
+      "Position": "Right Winger / Left Winger",
+      "Nationality": "Australia"
+    },
+    "name": "Nestory Irankunda",
+    "role": "Irankunda's rise began at Adelaide United, where he debuted and scored directly from a free kick at just 15, before a high-profile move to Bayern Munich in 2024 that briefly made him the most expensive sale in Adelaide's history. A difficult spell trying to break into Bayern's first team, including a loan to Grasshopper in Switzerland, led to a permanent move to Watford in July 2025 on an undisclosed fee. He started his Watford career in spectacular fashion, scoring back-to-back free kicks against Swansea and Southampton, and went on to make 44 appearances in his debut Championship season, scoring four goals and adding four assists, winning the club's Goal of the Month award on three separate occasions. His form earned a call-up to Australia's senior squad and selection for the 2026 World Cup.",
+    "chips": [
+      {
+        "k": "Market value",
+        "v": "8.0m"
+      },
+      {
+        "k": "Fee",
+        "v": "3.5m"
+      },
+      {
+        "k": "Contract",
+        "v": "2030"
+      }
+    ],
+    "image": null,
+    "rates": [],
+    "theme": {
+      "blue": "#000000",
+      "claret": "#FBEE32"
+    },
+    "league": "EFL Championship",
+    "number": 66,
+    "callout": {
+      "body": "Bayern's record fee for an Australian sale in 2024 raised expectations that did not translate into first-team minutes in Munich. Watford's move for an undisclosed fee in 2025, with a buy-back clause and sell-on percentage attached for Bayern, has so far looked like shrewd business for both clubs, with Irankunda getting the regular football he needed.",
+      "title": "From Bayern's bench to Watford's spotlight"
+    },
+    "sources": [
+      "Watford FC Official Site",
+      "Transfermarkt",
+      "ESPN",
+      "Total Football Analysis"
+    ],
+    "verdict": "A boyhood A-League prodigy who skipped straight to Bayern Munich at 18, Irankunda has rediscovered his best form at Watford, scoring twice from free kicks in his opening month and earning a World Cup call-up for Australia.",
+    "featured": false,
+    "posGroup": "Winger",
+    "worldCup": false,
+    "dateAdded": null,
+    "generated": "17 June 2026",
+    "positions": [
+      "RW",
+      "LW"
+    ],
+    "strengths": [
+      "Direct dribbling threat capable of beating a full-back one-on-one\nGenuine dead-ball quality, with three separate Goal of the Month awards from free kicks alone",
+      "Physical enough to cope with the Championship's combative style despite a slight frame",
+      "Already a senior international and World Cup squad member at 20"
+    ],
+    "projection": {
+      "body": "If Watford push for promotion, Irankunda's directness and dead-ball quality make him a strong candidate to be one of the division's standout wide players, with senior Australia recognition and a World Cup appearance further raising his profile ahead of any future move.",
+      "title": "Projection and Risk"
+    },
+    "weaknesses": [
+      "Output dipped in consistency across the full season relative to his explosive start",
+      "Decision-making in the final third can still favour the spectacular over the simple option",
+      "Limited senior minutes before his Watford move, having gone straight from the A-League to Bayern's fringes"
+    ],
+    "percentiles": [
+      {
+        "pct": 66,
+        "label": "Goals per 90",
+        "per90": "0.10"
+      },
+      {
+        "pct": 64,
+        "label": "Assists per 90",
+        "per90": "0.10"
+      },
+      {
+        "pct": 80,
+        "label": "Successful Dribbles per 90",
+        "per90": "2.80"
+      },
+      {
+        "pct": 78,
+        "label": "Progressive Carries per 90",
+        "per90": "4.3"
+      },
+      {
+        "pct": 69,
+        "label": "Shots on Target per 90",
+        "per90": "1.0"
+      }
+    ],
+    "percentileNote": "Percentiles calculated against EFL Championship wingers for the 2025/26 season."
+  },
+  {
+    "id": "el-hadji-malick-diouf",
+    "club": "West Ham",
+    "meta": {
+      "Age": "21",
+      "Born": "29 December 2004",
+      "Foot": "Left",
+      "Position": "Left-Back / Left Wing-Back",
+      "Nationality": ""
+    },
+    "name": "El Hadji Malick Diouf",
+    "role": "Diouf moved through Slavia Prague's pathway before a £19m switch to West Ham in the summer of 2025, arriving with a reputation as an attack-minded left-back comfortable contributing in the final third as well as defending his flank. With West Ham's first team toiling under Graham Potter and then Nuno Espirito Santo, Diouf has been one of the squad's more consistent performers, contributing supplementary attacking threat from full-back during a season in which many of his teammates have struggled. He represents Senegal internationally and is part of their 2026 World Cup squad, adding senior international experience to a breakout debut Premier League season at 21.",
+    "chips": [
+      {
+        "k": "Market value",
+        "v": "27.4"
+      },
+      {
+        "k": "Fee",
+        "v": "19"
+      },
+      {
+        "k": "Contract",
+        "v": "to 2030"
+      }
+    ],
+    "image": null,
+    "rates": [],
+    "theme": {
+      "blue": "#1CA4DA",
+      "claret": "#7A263A"
+    },
+    "league": "Premier League",
+    "number": 12,
+    "callout": {
+      "body": "With West Ham fighting against relegation for long periods of the 2025/26 season, Diouf's performances have stood out as one of the few clear successes of the campaign, and reports have linked Manchester United with a move to provide Luke Shaw with competition at left-back.",
+      "title": "A bargain in a difficult season?"
+    },
+    "sources": [
+      "Flashscore",
+      "Soccerway",
+      "ESPN"
+    ],
+    "verdict": "Signed for a modest £19m from Slavia Prague, Diouf has been one of the few genuine bright spots in a difficult West Ham season, and his form has already attracted interest from Manchester United.",
+    "featured": false,
+    "posGroup": "Full-back",
+    "worldCup": false,
+    "dateAdded": null,
+    "generated": "16 June 2026",
+    "positions": [
+      "LB",
+      "RWB"
+    ],
+    "strengths": [
+      "Genuine attacking output from full-back, supplementing West Ham's struggling forward line",
+      "Composed in defensive duels for a player in his first Premier League season",
+      "Reads danger early, reflected in a strong interception and clearance rate"
+    ],
+    "projection": {
+      "body": "Despite West Ham not retaining their Premier League status, Diouf's age, fee, and individual form point towards a player who has already outgrown the price West Ham paid for him, with a further step up plausible inside the next two transfer windows if his form holds.",
+      "title": "Projection and Risk"
+    },
+    "weaknesses": [
+      "Inconsistent defensive positioning when West Ham's structure breaks down at speed",
+      "Discipline has occasionally slipped, picking up cards in recoverable situations",
+      "Limited continental club football experience before his Premier League move"
+    ],
+    "percentiles": [
+      {
+        "pct": 68,
+        "label": "Tackles per 90",
+        "per90": "1.43"
+      },
+      {
+        "pct": 60,
+        "label": "Interceptions per 90",
+        "per90": "1.03"
+      },
+      {
+        "pct": 73,
+        "label": "Clearances per 90",
+        "per90": "3.85"
+      },
+      {
+        "pct": 71,
+        "label": "Progressive Carries per 90",
+        "per90": "3.4"
+      },
+      {
+        "pct": 64,
+        "label": "Successful Crosses per 90",
+        "per90": "0.9"
+      }
+    ],
+    "percentileNote": "Percentiles calculated against Premier League full-backs for the 2025/26 season."
+  },
+  {
+    "id": "jan-paul-van-hecke",
+    "club": "Tottenham Hotspur",
+    "meta": {
+      "Age": "26",
+      "Born": "08 June 2000",
+      "Foot": "Right",
+      "Position": "Centre-Back",
+      "Nationality": "Netherlands"
+    },
+    "name": "Jan Paul Van Hecke",
+    "role": "Van Hecke joined Brighton from NAC Breda in 2020 on the back of a single senior season, immediately went back out on loan to Heerenveen and then Blackburn Rovers to build experience, and returned in 2022 to become one of Brighton's most consistent defenders. He developed into a composed, left-footed-friendly partner inside a back four or three, comfortable stepping into midfield to break up play and confident enough on the ball to start attacks from deep. After repeatedly fielding interest from Tottenham and Newcastle United and turning down a club-record contract offer from Brighton to chase Champions League football, he finally completed a £52m move to Tottenham on 18 June 2026, agreed while he was away with the Netherlands at the World Cup. He has represented the Oranje at senior level and remains involved in their squad through the tournament, with his move to Spurs expected to be finalised on their pre-season tour once his international commitments end.",
+    "chips": [
+      {
+        "k": "Market value",
+        "v": "34.7"
+      },
+      {
+        "k": "Fee",
+        "v": "52"
+      },
+      {
+        "k": "Contract",
+        "v": "2030"
+      }
+    ],
+    "image": null,
+    "rates": [],
+    "theme": {
+      "blue": "#FFFFFF",
+      "claret": "#132257"
+    },
+    "league": "Premier League",
+    "number": 4,
+    "callout": {
+      "body": "Van Hecke had refused to extend his Brighton contract for over a year, making clear through his camp that he wanted Champions League football and a place at the World Cup. Brighton, who paid roughly €2.5m for him in 2020, held out for a fee in the region of £50m before accepting Tottenham's £52m offer, which finally arrived after several lower bids were rejected across the year.",
+      "title": "Why now?"
+    },
+    "sources": [
+      "Tottenham Hotspur Official",
+      "Spurs Web",
+      "Soccerway",
+      "Flashscore"
+    ],
+    "verdict": "Van Hecke completes a long-pursued move to Tottenham after four seasons establishing himself as a genuine Premier League centre-back at Brighton, finally getting the Champions League football he had been chasing.",
+    "featured": true,
+    "posGroup": "Centre-back",
+    "worldCup": false,
+    "dateAdded": null,
+    "generated": "19 June 2026",
+    "positions": [
+      "CB"
+    ],
+    "strengths": [
+      "Comfortable stepping out of the back line to press or intercept in midfield areas. Composed first pass out from the back under pressure",
+      "Reliable in the air against direct, physical Premier League forwards",
+      "Experienced in both back-three and back-four systems"
+    ],
+    "projection": {
+      "body": "At 26 and entering what should be his physical peak as a centre-back, Van Hecke arrives at a Champions League club with the profile of an immediate first-team option rather than a developmental signing, and a settled partnership alongside Tottenham's other senior defenders should follow quickly once pre-season begins.",
+      "title": "Projection"
+    },
+    "weaknesses": [
+      "Recovery pace tested by the quickest Premier League forwards in behind",
+      "Injury history includes recurring muscle and head knocks across recent seasons",
+      "Adjustment period expected stepping into a new defensive unit and coaching setup"
+    ],
+    "percentiles": [
+      {
+        "pct": 74,
+        "label": "Aerial Duels Won %",
+        "per90": "68"
+      },
+      {
+        "pct": 71,
+        "label": "Progressive Passes per 90",
+        "per90": "4.6"
+      },
+      {
+        "pct": 63,
+        "label": "Tackles + Interceptions per 90",
+        "per90": "2.3"
+      },
+      {
+        "pct": 76,
+        "label": "Pass Completion %",
+        "per90": "89"
+      },
+      {
+        "pct": 68,
+        "label": "Clearances per 90",
+        "per90": "4.1"
+      }
+    ],
+    "percentileNote": "Percentiles calculated against Premier League centre-backs for the 2025/26 season, Van Hecke's final campaign at Brighton."
+  },
+  {
+    "id": "samir-el-mourabet",
+    "club": "RC Strasbourg",
+    "meta": {
+      "Age": "20",
+      "Born": "6 October 2005",
+      "Foot": "Left",
+      "Position": "Central Midfielder",
+      "Nationality": "Morocco"
+    },
+    "name": "Samir El Mourabet",
+    "role": "El Mourabet operates as a defensive insurance midfielder who also contributes in transition. His role is to protect the back four, press intelligently from the front, and make the simple pass that keeps Morocco\\'s shape intact. He is not a primary creator or goal threat: he is the disciplined platform that allows attacking teammates the freedom to express themselves. In tournament football, where defensive organisation wins matches, that profile has considerable value.",
+    "chips": [
+      {
+        "k": "Market value",
+        "v": "18.9m"
+      },
+      {
+        "k": "Fee",
+        "v": "Youth Product"
+      },
+      {
+        "k": "Contract",
+        "v": "2027"
+      }
+    ],
+    "image": null,
+    "rates": [],
+    "theme": {
+      "blue": "#006233",
+      "claret": "#c1272d"
+    },
+    "league": "Ligue 1",
+    "number": 8,
+    "callout": {
+      "body": "He is both, and the distinction matters. His profile is specifically designed for tournament football: defensive discipline, high press volume, structural intelligence, and the fitness to sustain intensity across 90 minutes three times in seven days. For a knock-out tournament, these qualities are as valuable as creative flair. The longer-term question is whether he develops the technical and creative layer needed to start at a top European club. His current output suggests a ceiling as a reliable squad midfielder at a top-half European club rather than a starter at the elite level, but he is 20 and the trajectory could still move significantly.",
+      "title": "Is El Mourabet a tournament player or a genuine long-term prospect?"
+    },
+    "sources": [
+      "Transfermarkt",
+      "FBref",
+      "Striver Football",
+      "Opta Analysis"
+    ],
+    "verdict": "El Mourabet is the midfielder Walid Regragui has built his World Cup defensive structure around. A box-to-box engine with relentless counter-pressing intensity and structural maturity far beyond 20 years old, he covers an exceptional amount of ground, locks down half-spaces with composure, and provides Morocco with the engine to match high-tempo European midfields. His 33 Ligue 1 appearances in 2025-26 underline how much Strasbourg trust him.",
+    "featured": false,
+    "posGroup": "Midfielder",
+    "worldCup": true,
+    "dateAdded": "2026-06-21",
+    "generated": "21 June 2026",
+    "positions": [
+      "DM",
+      "CM"
+    ],
+    "strengths": [
+      "Counter-pressing machine: described by Striver Football (June 2026) as an \"absolute counter-pressing machine\" who covers absurd amounts of ground. His ability to immediately press after losing possession makes Morocco's midfield difficult to play through in transition.",
+      "Structural maturity: at 20 he plays with the positional discipline of a player several years older. His ability to lock down half-spaces and maintain Morocco's defensive shape against high-tempo European midfields is the primary reason Regragui selected him.",
+      "Tournament reliability: 33 Ligue 1 starts plus 10 Conference League appearances in one season confirms his physical durability and his manager's trust. In a tournament context, availability and consistency are underrated assets."
+    ],
+    "projection": {
+      "body": "El Mourabet's ceiling is a reliable starting central midfielder in Ligue 1 or a high-intensity European mid-tier league, contributing primarily through defensive output and workrate rather than creative statistics. The upside scenario, if his technical range develops to match his physical and positional qualities, is a squad midfielder at a top-eight European club. The risk is creative stagnation: if his goal and assist output does not improve beyond current levels, he will always be the player clubs value as cover rather than as a starter. The 2027 contract expiry creates a natural decision point. A strong World Cup makes the market for him significantly more competitive.",
+      "title": "Projection and Risk"
+    },
+    "weaknesses": [
+      "Creative output: 1 goal and 2 Ligue 1 assists in 2,128 minutes reflects a profile entirely focused on defensive contribution. If Morocco need their midfield to create, El Mourabet is not the solution.",
+      "Contract situation: his deal expires June 2027, meaning he enters the second year of his contract this summer. Strasbourg will need to extend or sell to avoid losing him for free. This creates commercial pressure in a window where his World Cup performances will define the price.",
+      "Big stage test: Strasbourg in Ligue 1 and the Conference League is a respectable but not elite platform. How his intensity and positioning translate against Musiala, Pedri or De Bruyne-level opponents at a World Cup is the defining question."
+    ],
+    "percentiles": [
+      {
+        "pct": 92,
+        "label": "Appearances",
+        "per90": "1"
+      },
+      {
+        "pct": 55,
+        "label": "Goals + Assists",
+        "per90": "0.13"
+      },
+      {
+        "pct": 80,
+        "label": "Conference League avg Rating",
+        "per90": "7.0"
+      },
+      {
+        "pct": 88,
+        "label": "Press Intensity",
+        "per90": "High"
+      },
+      {
+        "pct": 90,
+        "label": "Defensive Workrate",
+        "per90": "Elite"
+      }
+    ],
+    "percentileNote": "Appearances: 33 Ligue 1 games, 2,128 minutes (FBref 2025-26). Conference League: 10 apps, 752 min, 1 goal (FBref). Goals per 90: 1 goal in 23.64 Ligue 1 nineties = 0.04. G+A all comps: 3 in approximately 27 nineties = 0.13. Press intensity and defensive workrate percentiles qualitatively estimated from Striver Football analysis (June 2026). Specific defensive metric percentiles unavailable at time of compilation."
+  },
+  {
+    "id": "caleb-yirenkyi",
+    "club": "FC Nordsjaelland",
+    "meta": {
+      "Age": "20",
+      "Born": "15 January 2006",
+      "Foot": "Right",
+      "Position": "Central / Defensive Midfielder",
+      "Nationality": "Ghana"
+    },
+    "name": "Caleb Yirenkyi",
+    "role": "Yirenkyi operates most effectively as the deepest midfielder in a three, a role he settled into midway through the season after starting out as the right-sided eight. His footballing IQ is the defining quality: he makes split-second decisions with knowledge of what is around him before the ball arrives, and his ability to beat the press while in possession allows Nordsjaelland to play through aggressive defensive blocks. He is also versatile enough to play as a right-back or wing-back at international level, which increases his tactical value considerably.",
+    "chips": [
+      {
+        "k": "Market value",
+        "v": "10m"
+      },
+      {
+        "k": "Fee",
+        "v": "0m"
+      },
+      {
+        "k": "Contract",
+        "v": "2030"
+      }
+    ],
+    "image": null,
+    "rates": [],
+    "theme": {
+      "blue": "#ffffff",
+      "claret": "#cc0000"
+    },
+    "league": "Danish Superliga",
+    "number": 36,
+    "callout": {
+      "body": "The comparison to Kudus is not made lightly. Like Kudus, Yirenkyi was fast-tracked into Nordsjaelland's senior team from the Right to Dream system and immediately established himself as one of the club\\'s most important players. Like Kudus, the interest from the Premier League is based on underlying quality rather than headline numbers. The difference is that Kudus had a longer run at Nordsjaelland before moving to Ajax. Yirenkyi might be accelerated even faster given the intensity of Premier League interest. The World Cup with Ghana is the ideal audition stage: international tournament football against higher-quality opponents will confirm or complicate the trajectory.",
+      "title": "Is Yirenkyi the next major Right to Dream export?"
+    },
+    "sources": [
+      "Transfermarkt",
+      "Fotmob",
+      "Wikipedia",
+      "footy-africa.com"
+    ],
+    "verdict": "Yirenkyi is the most compelling midfield prospect to emerge from the Right to Dream pipeline since Mohammed Kudus. At 20 he has established himself as Nordsjaelland's most important player, completing 92.3% of 61 passes per 90 in the Danish Superliga while operating as both a holding midfielder and a box-to-box eight. Liverpool and Arsenal are among the clubs monitoring him. Ghana have called him up to the senior team and taken him to the World Cup.",
+    "featured": false,
+    "posGroup": "Midfielder",
+    "worldCup": true,
+    "dateAdded": "2026-06-20",
+    "generated": "23 June 2026",
+    "positions": [
+      "CB",
+      "RB",
+      "RWB",
+      "DM",
+      "CM"
+    ],
+    "strengths": [
+      "Elite press resistance: completing 92.3% of 61 passes per 90 under the pressure of a high-tempo Danish Superliga is exceptional. Scouts consistently highlight the maturity of his decision-making under pressure, which is the rarest attribute to develop.",
+      "Positional versatility: effective at CM, DM, CB, RB and wing-back for club and country. Carlos Queiroz fast-tracked him into the Ghana senior setup at right-back specifically because of this adaptability. Versatile profiles are significantly easier to integrate at a new club.",
+      "Right to Dream pedigree: the academy has produced Simon Adingra, Mohammed Kudus and Kamaldeen Sulemana as senior international starters. Yirenkyi is widely regarded by scouts as the best midfielder to emerge from the system. The track record matters."
+    ],
+    "projection": {
+      "body": "If the step up to a Big 5 league confirms the quality already visible in the Superliga, Yirenkyi's ceiling is a starting central midfielder at a top-half Premier League or European mid-tier club contributing meaningfully within one to two seasons. The risk is the level gap. Danish Superliga pass completion percentages can be misleading when the quality of pressing and opposition structure is significantly lower than the Premier League or Bundesliga. The World Cup will provide a cleaner data point than any Superliga campaign can.",
+      "title": "Projection and Risk"
+    },
+    "weaknesses": [
+      "Level of competition: the Danish Superliga is a respected developmental league but not a top-five competition. His numbers need to be read with that caveat. The step up to the Premier League or Bundesliga will answer the major question marks around his profile.",
+      "Goal and assist output: two goals and four assists from a central midfielder across 30 Superliga games is modest. For a player widely linked to elite clubs, the direct output needs to increase significantly at the next level.",
+      "Physical development: at 20 and 1.82m, his physical profile is still developing. Against the most aggressive pressing sides in Europe\\'s top divisions he will face a different intensity level in the duel exchanges."
+    ],
+    "percentiles": [
+      {
+        "pct": 95,
+        "label": "Pass Completion %",
+        "per90": "92.3"
+      },
+      {
+        "pct": 94,
+        "label": "Passes per 90",
+        "per90": "61"
+      },
+      {
+        "pct": 70,
+        "label": "Goal Involvement",
+        "per90": "0.22"
+      },
+      {
+        "pct": 55,
+        "label": "Goals",
+        "per90": "0.07"
+      },
+      {
+        "pct": 70,
+        "label": "Assists",
+        "per90": "0.14"
+      }
+    ],
+    "percentileNote": "Pass Completion and Passes per 90 cited from Yahoo Sports (Feb 2026 analysis). All percentiles vs Danish Superliga MF peers. Stats: 30 apps, 2 goals, 4 assists (2025-26 Danish Superliga, Wikipedia). Note: Danish Superliga comparisons reflect a developing league environment; Big 5 step-up remains the key test."
+  },
+  {
+    "id": "johan-manazmbi",
+    "club": "SC Freiburg",
+    "meta": {
+      "Age": "20",
+      "Born": "14 October 2005",
+      "Foot": "Right",
+      "Position": "Central Midfielder",
+      "Nationality": "Switzerland"
+    },
+    "name": "Johan Manazmbi",
+    "role": "Manzambi plays primarily as a box-to-box central midfielder but with qualities that push toward a free eight or shadow striker. He operates at the junction of midfield and forward lines, arriving late into the box as a secondary runner and combining that with genuine carrying ability from deeper zones. His first touch and shiftiness allows him to quickly map the pitch on reception, and his dribbling is creative, used to isolate defenders in the left half-space and generate shooting or crossing opportunities.",
+    "chips": [
+      {
+        "k": "Market value",
+        "v": "35m"
+      },
+      {
+        "k": "Fee",
+        "v": "Undisclosed"
+      },
+      {
+        "k": "Contract",
+        "v": "2030"
+      }
+    ],
+    "image": null,
+    "rates": [],
+    "theme": {
+      "blue": "#1d1d1b",
+      "claret": "#e3000f"
+    },
+    "league": "Bundesliga",
+    "number": 17,
+    "callout": {
+      "body": "Because the combination of attributes Manzambi displays maps onto exactly the kind of midfielder that has attracted nine-figure transfer fees in recent windows. What distinguishes him from pure hype is that the underlying numbers are legitimate. Statsbomb ranking him first in the Bundesliga for on-ball carry value per 90 is not a PR metric. It only shows up when dribbling is genuinely productive in terms of pitch territory gained. Freiburg are smart sellers. Their 50 to 55 million euro asking price is calculated: it prices out clubs merely interested and keeps those who genuinely believe in him. After a World Cup at 20, with Switzerland likely seeing significant ball time, that number is likely to rise.",
+      "title": "Why are Europe's biggest clubs circling a 20-year-old at Freiburg?"
+    },
+    "sources": [
+      "Transfermarkt",
+      "Fotmob",
+      "Opta Analysis",
+      "FBref.com"
+    ],
+    "verdict": "Manzambi's 2025-26 Bundesliga season was one of the most impressive debut campaigns by a teenager in the division in several years. Five goals and four assists in 27 appearances, named Europa League Young Player of the Season, and ranking first in the Bundesliga among midfielders for dribble and carry on-ball value per 90. Manchester United, Arsenal, PSG, Bayern Munich and Real Madrid are tracking him. Freiburg's asking price of 50 to 55 million euros is the highest in their history.",
+    "featured": false,
+    "posGroup": "Midfielder",
+    "worldCup": true,
+    "dateAdded": "2026-06-19",
+    "generated": "19 June 2026",
+    "positions": [
+      "CM",
+      "AM",
+      "LW"
+    ],
+    "strengths": [
+      "Dribble and carry dominance: ranked first in the Bundesliga among midfielders for dribble and carry on-ball value per 90 (Statsbomb). His combination of shiftiness, pace and first touch makes him genuinely difficult to dispossess.",
+      "Dual goal and creation threat: five goals and four assists at 19 to 20 as a central midfielder in a top-five league is rare. He arrives into the box late, generates shots frequently at 2.19 per 90, and is beginning to convert at a meaningful rate.",
+      "Europa League recognition: named Europa League Young Player of the Season after two goals in the semi-finals against Braga. He raises his level in high-stakes environments, a positive psychological signal."
+    ],
+    "projection": {
+      "body": "Manzambi has one of the higher ceilings in European football at his age group. The arc toward a top-ten European midfielder is realistic. The tools are present, the development environment at Freiburg is among the best for young players in Germany, and his contract locks him in through 2030 with no release clause. The risk is that his output is partly a product of Freiburg's system and he may struggle to replicate the numbers at a club that defends deeper and demands more without the ball.",
+      "title": "Projection and RIsk"
+    },
+    "weaknesses": [
+      "Defensive contribution: his motor runs hot and cold out of possession. He is active in counter-pressing scenarios when alert but can switch off in sustained defensive phases.",
+      "Discipline: six yellow cards and two red cards in 27 Bundesliga appearances is a high count for a central midfielder in his first proper senior season.",
+      "System dependency: Freiburg's high-press system allows Manzambi to carry into gaps that a more defensively organised side would close. How his profile translates to a team that faces the ball more often remains open."
+    ],
+    "percentiles": [
+      {
+        "pct": 99,
+        "label": "Progressive Carries",
+        "per90": "2.32"
+      },
+      {
+        "pct": 78,
+        "label": "Goals per 90",
+        "per90": "0.21"
+      },
+      {
+        "pct": 78,
+        "label": "Non-Penalty xG",
+        "per90": "0.28"
+      },
+      {
+        "pct": 71,
+        "label": "Expected Assists",
+        "per90": "0.20"
+      },
+      {
+        "pct": 82,
+        "label": "Shots per 90",
+        "per90": "2.19"
+      }
+    ],
+    "percentileNote": "Progressive Carries: 54 progressive dribbles in 2,094 min (23.27 nineties), cited One-vs-One.com. Consistent with Statsbomb ranking Manzambi 1st in the Bundesliga among midfielders (1,200+ min) for dribble and carry on-ball value per 90. xG, xA and Goals percentiles vs all Bundesliga players from FootyStats. Shots percentile estimated vs MF peers."
+  },
+  {
+    "id": "guillaume-restes",
+    "club": "FC Toulouse",
+    "meta": {
+      "Age": "21",
+      "Born": "11 March 2005",
+      "Foot": "Left",
+      "Position": "Goalkeeper",
+      "Nationality": "France"
+    },
+    "name": "Guillaume Restes",
+    "role": "Restes operates as a modern sweeper-keeper who has grown into the most dependable presence at a Toulouse side that has often had to defend in numbers. He is commanding in the air and deals decisively with through-balls. With his feet he is clean and calm under pressure, capable of building from the back in structured possession phases. His shot-stopping on direct efforts draws regular praise from analysts who cover the division closely, and it is that quality in the moments that matter which has caught the attention of clubs several levels above Ligue 1.",
+    "chips": [
+      {
+        "k": "Market value",
+        "v": "18m"
+      },
+      {
+        "k": "Fee",
+        "v": "Youth Product"
+      },
+      {
+        "k": "Contract",
+        "v": "2028"
+      }
+    ],
+    "image": null,
+    "rates": [],
+    "theme": {
+      "blue": "#ffffff",
+      "claret": "#5e2d8b"
+    },
+    "league": "Ligue 1",
+    "number": 1,
+    "callout": {
+      "body": "Milan's scouting is respected enough that their attention alone is a signal worth examining. The numbers provide partial justification: Restes is the youngest goalkeeper to start every league game for a non-bottom-three Ligue 1 club, and his save volumes and clean sheet rate are above average for a side that conceded 45 goals in the season. The more compelling argument is qualitative: the consistency of a 21-year-old across a full professional season, without a dip in reliability or focus, is genuinely unusual. The risk is the jump in competition quality. Toulouse are a good development environment but not an elite one. Milan fans should expect a transition period rather than immediate dominance.",
+      "title": "Is AC Milan's reported interest justified by the numbers?"
+    },
+    "sources": [
+      "Transfermarkt",
+      "Fotmob",
+      "One-Vs-One.com",
+      "Total Football Analysis"
+    ],
+    "verdict": "Restes is the most complete young goalkeeper in Ligue 1 and one of the most credible young keepers in European football. He started every one of Toulouse's 33 league games in 2025-26, kept nine clean sheets for a mid-table side, and has drawn concrete scouting interest from AC Milan. He is a goalkeeper of substance, not just promise.",
+    "featured": false,
+    "posGroup": "Goalkeeper",
+    "worldCup": false,
+    "dateAdded": null,
+    "generated": "22 June 2026",
+    "positions": [
+      "GK"
+    ],
+    "strengths": [
+      "Complete season availability: started all 33 Ligue 1 matches, 2,962 minutes. For a 21-year-old, sustained trust from the coaching staff at this level is itself a data point.",
+      "Shot-stopping reliability: 87 saves in the season for a mid-table side facing regular attacking pressure. Nine clean sheets represents 27% of games, a strong rate for a club of Toulouse\\'s standing.",
+      "Sweeper-keeper ability: his comfort receiving the ball from teammates and his calm under pressing pressure places him in the modern mould. He suits systems that want to play through the goalkeeper."
+    ],
+    "projection": {
+      "body": "Restes has the profile to become a top-ten European goalkeeper over the next four to five years. The foundation is strong: technical cleanliness, game intelligence beyond his age, and the mental consistency to start every game in a demanding professional league at 20 and 21. The next developmental step is a club competing in the Champions League where the pressure and decision-making demands accelerate growth faster than any domestic Ligue 1 season can. Whether he moves this summer or after another Toulouse campaign, the trajectory is clear. The risk is a premature move where he becomes third choice at a big club and loses the irreplaceable developmental value of consistent playing time.",
+      "title": "Projection and Risk"
+    },
+    "weaknesses": [
+      "Save percentage context: with 87 saves and 45 goals conceded from 132 shots on target, his 65.9% save rate is slightly below the Ligue 1 average. The quality of opposition shots inflates this figure, but it is a metric to monitor.",
+      "Top-level aerial testing: the quality of centre-forwards in Ligue 1 is not the same as the Premier League or Serie A. How Restes deals with high-quality service into the box from elite forwards remains to be answered.",
+      "European pedigree ceiling: despite Champions League and Europa League group-stage exposure, he has not yet been tested in a knockout run at the highest level. That step is the key unknown."
+    ],
+    "percentiles": [
+      {
+        "pct": 76,
+        "label": "Saves per 90",
+        "per90": "2.64"
+      },
+      {
+        "pct": 72,
+        "label": "Clean Sheets per 90",
+        "per90": "0.27"
+      },
+      {
+        "pct": 99,
+        "label": "Games Started",
+        "per90": "1"
+      },
+      {
+        "pct": 55,
+        "label": "Goals Conceded per 90",
+        "per90": "1.37"
+      },
+      {
+        "pct": 75,
+        "label": "FotMob avg rating",
+        "per90": "6.85"
+      }
+    ],
+    "percentileNote": "All percentiles estimated vs Ligue 1 GK peers from FotMob positional comparison (scores highly on Matches, Started, and Clean Sheets). Raw stats: 87 saves, 45 goals conceded, 9 clean sheets, 2,962 minutes (FotMob, Ligue 1 2025-26). Goals Conceded percentile contextual for a mid-table side."
+  },
+  {
+    "id": "nathaniel-brown",
+    "club": "Eintracht Frankfurt",
+    "meta": {
+      "Age": "22",
+      "Born": "16 June 2003",
+      "Foot": "Left",
+      "Position": "Left-Back",
+      "Nationality": "Germany"
+    },
+    "name": "Nathaniel Brown",
+    "role": "Brown plays as a traditional overlapping left-back who can also tuck into midfield in a 3-4-3. His primary value is the width he provides on the left and the quality of his final-third delivery. He covers enormous distance per game with a recorded top speed of 35.78 km/h, which makes him invaluable in Frankfurt's high-press system. Defensively he wins the majority of ground duels and presses aggressively, recovering the ball in advanced zones at an above-average rate.",
+    "chips": [
+      {
+        "k": "Market value",
+        "v": "40m"
+      },
+      {
+        "k": "Fee",
+        "v": "Undisclosed"
+      },
+      {
+        "k": "Contract",
+        "v": "2030"
+      }
+    ],
+    "image": null,
+    "rates": [],
+    "theme": {
+      "blue": "#000000",
+      "claret": "#e1000f"
+    },
+    "league": "Bundesliga",
+    "number": 3,
+    "callout": {
+      "body": "The argument for yes is credible. His stats would not look out of place in the Premier League: four goals and four assists is what Premier League left-backs are routinely praised for, and his pressing intensity would fit naturally into a high-line system. The argument against is that he has not been tested against that consistent quality. Frankfurt are a strong Bundesliga side but the weekly opponent quality in the Premier League top six is a meaningful step up. His aerial weakness would be more regularly targeted. Another season at Frankfurt in the Champions League, where he has already contributed, would sharpen the edge. Germany\\'s World Cup inclusion signals the national team coaches see him closer to that level than the cautious read suggests.",
+      "title": "Is Brown ready for a top-six Premier League club?"
+    },
+    "sources": [
+      "Transfermarkt",
+      "Fotmob",
+      "Bundesliga.com",
+      "Bundesliga Analysis",
+      "Fbref.com"
+    ],
+    "verdict": "Brown finished 2025-26 as Eintracht Frankfurt's Player of the Season. A left-back who contributed four goals and four Bundesliga assists plus two Champions League assists, all at age 22. He is one of the most complete young full-backs in Europe's top leagues and Germany included him in their World Cup squad. That trajectory is not a surprise to anyone who has followed him through Nurnberg.",
+    "featured": false,
+    "posGroup": "Full-back",
+    "worldCup": false,
+    "dateAdded": null,
+    "generated": "21 June 2026",
+    "positions": [
+      "LB",
+      "LWB"
+    ],
+    "strengths": [
+      "Goal and assist output: four goals and four Bundesliga assists plus two Champions League assists gives Brown a return most Premier League left-backs would be satisfied with. His long-range shooting is unusual for the position.",
+      "Athletic profile: 35.78 km/h recorded top speed and 258.5 km covered across the Bundesliga season. This translates to consistent overlap threat and high defensive recovery capacity throughout ninety minutes.",
+      "Counter-pressing contribution: approximately seven ball recoveries per 90 in advanced zones across recent seasons. A left-back who wins the ball high and contributes immediately to transitions is worth more than his defensive stats alone suggest."
+    ],
+    "projection": {
+      "body": "Brown has the profile of a long-term elite left-back. His attacking output is already top-quartile in the Bundesliga for the position and his defensive tools are improving. The ceiling is a Champions League regular-starter level left-back within the bracket of the fifteen to twenty best in the continent. A World Cup with Germany at 22 is the ideal environment to test his composure at the highest level, and how he performs there will significantly inform where he moves in the summer.",
+      "title": "Projection and Risk"
+    },
+    "weaknesses": [
+      "Aerial duels: at 1.76m, Brown wins around 45% of aerial duels, below average for a full-back. Against crosses into his area from set pieces, his height is a vulnerability.",
+      "Dribble success inconsistency: his take-on completion rate dropped from 86.4% (2022-23) to approximately 53% in more recent data as opponents have become more familiar with his movement.",
+      "Penalty-area defending: scouting reports flag difficulty in high-pressure one-v-one defending inside the box, where intelligent forward runs can catch him out of position."
+    ],
+    "percentiles": [
+      {
+        "pct": 85,
+        "label": "Goals per 90",
+        "per90": "0.14"
+      },
+      {
+        "pct": 88,
+        "label": "Goal Contributions",
+        "per90": "0.27"
+      },
+      {
+        "pct": 80,
+        "label": "Successful Tackles",
+        "per90": "2.47"
+      },
+      {
+        "pct": 85,
+        "label": "Distance Covered (km)",
+        "per90": "8.76"
+      },
+      {
+        "pct": 82,
+        "label": "Progressive Carries",
+        "per90": "2.70"
+      }
+    ],
+    "percentileNote": "All percentiles estimated vs LB peers, Bundesliga. Goals per 90: 4 goals in 2,657 min (29.52 nineties). Tackles: 73 tackles / 29.52. Distance: 258.5 km / 29.52 (Bundesliga.com). Progressive Carries from Bundesliga Analysis seasonal data. FotMob: scores highly on Goals, Matches, and Started vs Bundesliga left-backs."
+  },
+  {
+    "id": "luka-vuskovic",
+    "club": "Hamburger SV",
+    "meta": {
+      "Age": "19",
+      "Born": "24 Feb 2007",
+      "Foot": "Right",
+      "Position": "Centre-Back",
+      "Nationality": "Croatia"
+    },
+    "name": "Luka Vuskovic",
+    "role": "Vuskovic plays a sweeper-stopper hybrid role that is physically dominant but tactically intelligent. He shepherds forwards into less dangerous areas before winning the duel, a pattern that explains his elite success rate despite not being reckless. On the ball he is calm and decisive, preferring vertical passes through the lines over sideways circulation. His 1.93m frame makes him a set-piece weapon at both ends.",
+    "chips": [
+      {
+        "k": "Market value",
+        "v": "60m"
+      },
+      {
+        "k": "Fee",
+        "v": "12m"
+      },
+      {
+        "k": "Contract",
+        "v": "2030"
+      }
+    ],
+    "image": null,
+    "rates": [],
+    "theme": {
+      "blue": "#FFFFFF",
+      "claret": "#132257"
+    },
+    "league": "Bundesliga",
+    "number": 4,
+    "callout": {
+      "body": "The case for yes is stronger than it looks. Pau Cubarsi gets more headlines, but Vuskovic's defensive metrics, specifically the duel and aerial supremacy, are arguably better at the same stage of development. The counterargument is that the Bundesliga is more space-generous than La Liga and Cubarsi has been tested in the Champions League at a similar age. What is not debatable is that no other teenager in European football was doing what he did for Hamburg in 2025-26, and Brighton paying 30 to 35 million pounds and being rejected tells you the scouting community has noticed.",
+      "title": "Is Vuskovic the most exciting young centre-back in world football?"
+    },
+    "sources": [
+      "Transfermarkt",
+      "Fotmob",
+      "Bundesliga.com",
+      "FBref"
+    ],
+    "verdict": "The most dominant teenage defender in European football since Gerard Pique. Vuskovic's 2025-26 Bundesliga season at Hamburg was not just remarkable for a teenager: it was remarkable for any centre-back at any age. Six goals as the league\\'s highest-scoring defender, the best duel success rate in the entire division, and a Bundesliga Player of the Season award at 19 years old.",
+    "featured": false,
+    "posGroup": "Centre-back",
+    "worldCup": false,
+    "dateAdded": null,
+    "generated": "20 June 2026",
+    "positions": [
+      "CB"
+    ],
+    "strengths": [
+      "Duel supremacy: 69.1% total duel success rate is the best in the Bundesliga among all defenders. His aerial win rate at the highest volume in the squad is the defining physical characteristic of his season.",
+      "Goal threat from set pieces: six Bundesliga goals in 28 appearances makes him the league's highest-scoring defender. His timing of runs, aerial power, and composure in the box give Hamburg a genuine second-phase weapon.",
+      "Composure and tactical intelligence beyond his age: his game is built on anticipation. He reads movements early, positions himself to intercept, and rarely needs last-ditch challenges because he wins the territory battle first."
+    ],
+    "projection": {
+      "body": "The ceiling is an elite Champions League centre-back for the next decade. The immediate question is whether Tottenham integrate him in 2026-27 with Van Hecke and Senesi ahead of him. Another loan at a top-half Premier League or top-three Bundesliga club would be the ideal bridge. The risk is mismanagement: holding him without meaningful game time stalls the development curve. His contract runs to 2030 so there is no external pressure, but history suggests keeping elite young talents in reserve roles rarely ends well.",
+      "title": "Projection and risk"
+    },
+    "weaknesses": [
+      "Bundesliga to Premier League step: the Bundesliga is a high-quality competition but provides more space than the Premier League. His carrying ability and positioning have not yet been tested against a top-five-league defensive block outside Germany.",
+      "Forward pass range: scouting data places him in the 72nd percentile for forward passes, which is solid but not elite. His passing primarily recycles possession rather than breaks lines.",
+      "Discipline: six yellow cards across the Bundesliga season is a high count. The physicality of his game will need managing at higher competition levels."
+    ],
+    "percentiles": [
+      {
+        "pct": 99,
+        "label": "Goals per 90",
+        "per90": "0.22"
+      },
+      {
+        "pct": 99,
+        "label": "Aerial Wins per 90",
+        "per90": "3.94"
+      },
+      {
+        "pct": 90,
+        "label": "Fouls Drawn",
+        "per90": "1.38"
+      },
+      {
+        "pct": 95,
+        "label": "Shots per 90",
+        "per90": "0.55"
+      },
+      {
+        "pct": 99,
+        "label": "Total Duels Won",
+        "per90": "7.11"
+      }
+    ],
+    "percentileNote": "Goals per 90: 6 goals in 2,441 minutes (27.12 nineties). Aerial Wins: cited from Daye Fubara Substack (Jan 2026, 71 aerial wins in ~18 games). Shots: 15 shots in 2,441 min. Duels Won per 90 derived from confirmed season-end 69.1% duel win rate (Wikipedia). All percentiles vs Bundesliga CB peers."
+  },
+  {
+    "id": "martin-baturina",
+    "club": "Como 1907",
+    "meta": {
+      "Age": "23",
+      "Born": "16 Feb 2003",
+      "Foot": "Right",
+      "Position": "Centre-Attacking Midfield",
+      "Nationality": "Croatia"
+    },
+    "name": "Martin Baturina",
+    "role": "Baturina sits in the hole behind the forward line, functioning as both primary creator and secondary finisher. His game is built on movement, timing, and precise short-range passing in congested areas. He receives facing goal whenever possible, uses his first touch to shift a marker, and threads the pass before the defensive shape can recover. A Luka Modric admirer in both style and substance.",
+    "chips": [
+      {
+        "k": "Market value",
+        "v": "30m"
+      },
+      {
+        "k": "Fee",
+        "v": "16m"
+      },
+      {
+        "k": "Contract",
+        "v": "to 2030"
+      }
+    ],
+    "image": null,
+    "rates": [],
+    "theme": {
+      "blue": "#003DA5",
+      "claret": "#CC0000"
+    },
+    "league": "Serie A",
+    "number": 10,
+    "callout": {
+      "body": "The honest answer is both. Como under Fabregas run a patient possession system that suits Baturina almost perfectly. His initial struggles showed he needed time to adjust. However the second-half numbers are genuinely striking, and the surge happened as he earned trust with teammates, which is a natural development curve. Six goals for an attacking midfielder in a debut Serie A season, mostly in the second half of the campaign, is encouraging if incomplete. The World Cup with Croatia will tell us far more about his ceiling than a comfortable debut season ever could.",
+      "title": "Has the Serie A step-up confirmed Baturina as an elite prospect or a comfortable system player?"
+    },
+    "sources": [
+      "Transfermarkt",
+      "Fotmob",
+      "FootyStats",
+      "Sofascore"
+    ],
+    "verdict": "Baturina arrived in Serie A as a prospect and left his debut season as one of Como's standout performers. Six goals and three assists in 29 league appearances, with key passes per game doubling after the winter break, tells the story of a player who needed time to settle before showing what he is: a composed, technically precise number ten who finds pockets between the lines that most midfielders cannot access.",
+    "featured": false,
+    "posGroup": "Midfielder",
+    "worldCup": true,
+    "dateAdded": "2026-06-19",
+    "generated": "19 June 2026",
+    "positions": [
+      "AM",
+      "LW"
+    ],
+    "strengths": [
+      "Technical precision in tight spaces: first touch and short-passing accuracy in congested midfield zones is elite for his age. He consistently finds teammates between the lines that peer midfielders do not see.",
+      "Second-half surge: started just 3 games before January 2026, then started 10 more and recorded 6 goals and 3 assists, with key passes per game rising from 1.00 to 2.57. The rising form is a significant positive signal.",
+      "Modric-esque movement: receives under pressure, shifts the marker with minimal touches, and immediately finds a progressive option. One of the most efficient ball-progressors for his position in Serie A."
+    ],
+    "projection": {
+      "body": "The pathway to the very top is open. His technical profile maps closely to what top European systems covet: a compact, intelligent AM who operates between the lines and handles pressure without losing the ball. At 23 with a five-year contract at Como, there is no rush. One more consistent full season before a move to a bigger stage is the sensible trajectory. The physical limitation remains the primary risk.",
+      "title": "Projection and risk"
+    },
+    "weaknesses": [
+      "Physical profile: at 1.72m and slight in build, he can be bullied out of central midfield by aggressive pressing sides. Serie A is kinder to technical players than the Premier League would be.",
+      "Aerial game: his heading is functionally non-existent, limiting his utility in direct systems. He is very positionally specific and offers little outside his narrow technical role.",
+      "Output consistency: the strong season was heavily back-loaded. Five months of finding his feet raises the question of whether he can produce from game one in higher-pressure environments."
+    ],
+    "percentiles": [
+      {
+        "pct": 88,
+        "label": "Goals",
+        "per90": "0.34"
+      },
+      {
+        "pct": 88,
+        "label": "Non-Penalty xG",
+        "per90": "0.32"
+      },
+      {
+        "pct": 90,
+        "label": "Goal Involvement",
+        "per90": "0.52"
+      },
+      {
+        "pct": 71,
+        "label": "Expected Assists",
+        "per90": "0.17"
+      },
+      {
+        "pct": 75,
+        "label": "Shots",
+        "per90": "1.58"
+      }
+    ],
+    "percentileNote": "Goals and npxG percentiles: FootyStats (vs all Serie A players). Goal Involvement and Shots percentiles estimated against Serie A AM peers. Stats: 29 apps, 1,569 min, 6 goals, 3 assists (Ligue 1 / FotMob 2025-26)."
+  }
+];
+/* __REPORTS_END__ */
+
+/* ══ STATE ══ */
+let activeFilter    = 'All';
+let filterMode      = 'main';
+let reportOrigin    = 'board';
+let currentReportId = null;
+let searchQuery     = '';
+let compareSourceId = null;
+
+/* ══ HELPERS ══ */
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const topMetric = p => [...p.percentiles].sort((a,b)=>b.pct-a.pct)[0];
+const tier = pct => pct>=80?'#1565C0':pct>=50?'#822D3A':'#A0968C';
+
+const Z={GK:[6,50,24,22],CB:[6,44,50,34],RB:[6,82,66,34],LB:[6,6,66,34],RWB:[6,82,114,30],LWB:[6,6,114,30],DM:[54,38,46,46],CM:[88,34,54,54],AM:[126,36,50,50],RW:[114,88,72,28],LW:[114,6,72,28],ST:[142,40,42,42]};
+function pitchSVG(pos){
+  const rects=pos.map(p=>Z[p]).filter(Boolean).map(([x,y,w,h])=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="#fff" fill-opacity="0.5"/>`).join('');
+  return `<svg viewBox="0 0 188 120" width="100%"><rect x="1" y="1" width="186" height="118" rx="4" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.35)"/><line x1="94" y1="2" x2="94" y2="118" stroke="rgba(255,255,255,.35)"/><circle cx="94" cy="60" r="15" fill="none" stroke="rgba(255,255,255,.35)"/><rect x="2" y="36" width="24" height="48" fill="none" stroke="rgba(255,255,255,.35)"/><rect x="162" y="36" width="24" height="48" fill="none" stroke="rgba(255,255,255,.35)"/>${rects}<text x="182" y="114" text-anchor="end" fill="rgba(255,255,255,.5)" font-size="8">ATTACKING &#8594;</text></svg>`;
+}
+
+function radarChart(metrics){
+  const N=metrics.length;
+  if(N<3)return '';
+  const cx=110,cy=115,R=78;
+  const angle=i=>-Math.PI/2+(i/N)*2*Math.PI;
+  const pt=(r,i)=>{const a=angle(i);return{x:cx+r*Math.cos(a),y:cy+r*Math.sin(a)};};
+  const ps=(r,i)=>{const p=pt(r,i);return p.x.toFixed(1)+','+p.y.toFixed(1);};
+  const ptList=r=>metrics.map((_,i)=>ps(r,i)).join(' ');
+  const rings=[25,50,75,100].map(v=>`<polygon points="${ptList((v/100)*R)}" fill="none" stroke="#E5E0E6" stroke-width="0.8"/>`).join('');
+  const spokes=metrics.map((_,i)=>{const p=pt(R,i);return `<line x1="${cx}" y1="${cy}" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}" stroke="#E5E0E6" stroke-width="0.8"/>`;}).join('');
+  const dataPts=metrics.map((m,i)=>ps((m.pct/100)*R,i)).join(' ');
+  const dots=metrics.map((m,i)=>{const p=pt((m.pct/100)*R,i);return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" fill="#822D3A"/>`;}).join('');
+  const labels=metrics.map((m,i)=>{
+    const p=pt(R+20,i);
+    const anchor=p.x<cx-5?'end':p.x>cx+5?'start':'middle';
+    const lbl=m.label.length>14?m.label.substring(0,13)+'.':m.label;
+    return `<text x="${p.x.toFixed(1)}" y="${(p.y+3).toFixed(1)}" text-anchor="${anchor}" font-size="8.5" fill="#7C7682" font-family="Inter,sans-serif">${lbl}</text><text x="${p.x.toFixed(1)}" y="${(p.y+12).toFixed(1)}" text-anchor="${anchor}" font-size="8" fill="#1565C0" font-family="monospace" font-weight="bold">${m.pct}</text>`;
+  }).join('');
+  return `<svg viewBox="0 0 220 230" width="220" height="230" style="display:block;margin:0 auto;">${rings}${spokes}<polygon points="${dataPts}" fill="#1565C0" fill-opacity="0.12" stroke="#1565C0" stroke-width="1.8"/>${dots}${labels}<text x="${cx}" y="${cy}" text-anchor="middle" font-size="9" fill="#C2B8BC" font-family="monospace">Percentile</text></svg>`;
+}
+
+/* ══ MASTHEAD ══ */
+function renderMast(){
+  document.getElementById('siteEyebrow').textContent=SITE.eyebrow;
+  document.getElementById('siteName').textContent=SITE.name;
+  document.getElementById('siteTag').textContent=SITE.tagline;
+  const leagues=new Set(REPORTS.map(p=>p.league));
+  const s=[[REPORTS.length,'Players scouted'],[leagues.size,'Leagues covered'],[SITE.author,'Analyst']];
+  document.getElementById('siteStats').innerHTML=s.map(([n,l])=>`<div class="stat"><div class="n">${esc(String(n))}</div><div class="l">${esc(l)}</div></div>`).join('');
+}
+
+/* ══ FILTERS ══ */
+function getPositionCounts(){const c={};REPORTS.forEach(p=>{c[p.posGroup]=(c[p.posGroup]||0)+1;});return c;}
+
+function renderMainFilters(){
+  const onPos=!['All','Featured'].includes(activeFilter)&&filterMode==='main'?activeFilter:null;
+  document.getElementById('mainFilters').innerHTML=[
+    `<button class="${activeFilter==='All'?'on':''}" onclick="setFilter('All')">All</button>`,
+    `<button class="${activeFilter==='Featured'?'on':''}" onclick="setFilter('Featured')">Featured</button>`,
+    `<button class="${onPos?'on':''}" onclick="openPositionsMenu()">Positions ${onPos?'('+onPos+')':''} &#9656;</button>`,
+    `<button class="wc-btn" onclick="showWorldCup()">World Cup 2026</button>`,
+  ].join('');
+}
+
+function renderPosFilters(){
+  const counts=getPositionCounts();
+  const posButtons=Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([pos,n])=>`<button class="${activeFilter===pos?'on':''}" onclick="setPosFilter('${esc(pos)}')">${esc(pos)} (${n})</button>`).join('');
+  document.getElementById('posFilters').innerHTML=`<button class="back-btn" onclick="closePositionsMenu()">&#8592; Back</button>${posButtons}`;
+}
+
+function openPositionsMenu(){filterMode='positions';document.getElementById('mainFilters').classList.add('hidden');document.getElementById('posFilters').classList.remove('hidden');renderPosFilters();}
+function closePositionsMenu(){filterMode='main';document.getElementById('posFilters').classList.add('hidden');document.getElementById('mainFilters').classList.remove('hidden');renderMainFilters();}
+function setPosFilter(pos){activeFilter=pos;closePositionsMenu();renderBoard();}
+function setFilter(f){activeFilter=f;filterMode='main';document.getElementById('posFilters').classList.add('hidden');document.getElementById('mainFilters').classList.remove('hidden');renderMainFilters();renderBoard();}
+
+/* ══ BOARD ══ */
+function renderBoard(){
+  let list;
+  if(activeFilter==='All'){list=REPORTS;}
+  else if(activeFilter==='Featured'){list=REPORTS.filter(p=>p.featured);}
+  else{list=REPORTS.filter(p=>p.posGroup===activeFilter);}
+  if(searchQuery){list=list.filter(p=>p.name.toLowerCase().includes(searchQuery)||p.club.toLowerCase().includes(searchQuery)||p.posGroup.toLowerCase().includes(searchQuery)||(p.meta.Nationality&&p.meta.Nationality.toLowerCase().includes(searchQuery)));}
+  const cards=list.map(p=>{
+    const t=topMetric(p);
+    const star=p.featured?`<div class="feat-star">&#9733;</div>`:'';
+    return `<button class="pcard" style="--c:${p.theme.claret}" onclick="showReport('${p.id}','board')">
+      <div class="top" style="background:${p.theme.claret}">
+        ${star}<span class="ghost">${p.number||''}</span>
+        <span class="club">${esc(p.club)}</span>
+        <div class="nm">${esc(p.name)}</div>
+        <div class="sub">${esc(p.meta.Position)} &middot; ${esc(p.meta.Age)}</div>
+      </div>
+      <div class="body">
+        <div class="vt">${esc(p.verdict.split('.')[0])}.</div>
+        <div class="badge"><b>${t.pct}th</b> pct &middot; ${esc(t.label)}</div>
+      </div>
+    </button>`;
+  }).join('');
+  const empty=list.length===0?`<div class="addtile"><div class="plus">&#9679;</div><p>No reports in this section yet.</p></div>`:'';
+  const addTile=activeFilter==='All'?`<div class="addtile"><div class="plus">+</div><p>Your next report goes here.</p></div>`:'';
+  document.getElementById('board').innerHTML=cards+empty+addTile;
+}
+
+/* ══ WORLD CUP BOARD ══ */
+function renderWorldCupBoard(){
+  const wc=REPORTS.filter(p=>p.worldCup).sort((a,b)=>{
+    if(!a.dateAdded&&!b.dateAdded)return 0;if(!a.dateAdded)return 1;if(!b.dateAdded)return -1;
+    return new Date(b.dateAdded)-new Date(a.dateAdded);
+  });
+  const nations=new Set(wc.map(p=>p.meta.Nationality));
+  document.getElementById('wcMeta').innerHTML=[[wc.length,'Reports'],[nations.size,'Nations']].map(([n,l])=>`<div class="wc-stat"><div class="n">${n}</div><div class="l">${esc(l)}</div></div>`).join('');
+  const cards=wc.map(p=>{
+    const t=topMetric(p);
+    const dl=p.dateAdded?new Date(p.dateAdded).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'';
+    return `<button class="pcard" style="--c:${p.theme.claret}" onclick="showReport('${p.id}','worldcup')">
+      <div class="top" style="background:${p.theme.claret}">
+        <span class="ghost">${p.number||''}</span>
+        <span class="club">${esc(p.club)} &middot; ${esc(p.meta.Nationality)}</span>
+        <div class="nm">${esc(p.name)}</div>
+        <div class="sub">${esc(p.meta.Position)} &middot; Age ${esc(p.meta.Age)}</div>
+      </div>
+      <div class="body">
+        <div class="vt">${esc(p.verdict.split('.')[0])}.</div>
+        <div class="badge"><b>${t.pct}th</b> pct &middot; ${esc(t.label)}</div>
+        ${dl?`<div style="font-size:10.5px;color:var(--muted);margin-top:2px;">Added ${esc(dl)}</div>`:''}
+      </div>
+    </button>`;
+  }).join('');
+  const empty=wc.length===0?`<div class="addtile"><div class="plus">&#9733;</div><p>No World Cup reports yet. Set worldCup: true to add.</p></div>`:'';
+  document.getElementById('wcBoard').innerHTML=cards+empty;
+}
+
+/* ══ REPORT ══ */
+function renderReport(p){
+  const el=document.getElementById('report');
+  el.style.setProperty('--claret',p.theme.claret);
+  el.style.setProperty('--blue',p.theme.blue);
+  const meta=Object.entries(p.meta).map(([k,v],i)=>`${i?'<span class="dot">&middot;</span>':''}<span>${esc(k)} <b>${esc(v)}</b></span>`).join(' ');
+  const chips=p.chips.map(c=>`<div class="chip"><span class="k">${esc(c.k)}</span><span class="v">${esc(c.v)}</span></div>`).join('');
+  const bars=p.percentiles.map(b=>`<div class="bar"><div class="bar-label">${esc(b.label)}<small>${esc(b.per90)} per 90</small></div><div class="track"><div class="fill" data-w="${b.pct}" style="background:${tier(b.pct)}"></div></div><div class="pct">${b.pct}<small>th</small></div></div>`).join('');
+  const rateHTML=p.rates&&p.rates.length?`<h3 class="bt" style="font-size:13px;margin-top:14px;">Duel success rate</h3><div class="rates">${p.rates.map(r=>`<div class="rate"><div class="rate-top"><span class="lab">${esc(r.label)}</span><span class="num">${r.pct}%</span></div><div class="rate-track"><div class="rate-fill" data-w="${r.pct}"></div></div></div>`).join('')}</div>`:'';
+  const listBlock=(cls,title,items)=>`<div class="col ${cls}"><h4>${esc(title)}</h4><ul>${items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>`;
+  el.innerHTML=`
+    <div class="np">
+      <div class="np-ghost">${p.number||''}</div>
+      <div class="np-grid">
+        <div class="np-left">
+          <p class="eb">Scouting Report &middot; ${esc(p.club)}</p>
+          <h2>${esc(p.name)}</h2>
+          <div class="np-meta">${meta}</div>
+          <div class="chips">${chips}</div>
+        </div>
+        <div class="np-right">
+          <div class="pitch-wrap">${pitchSVG(p.positions)}<div class="pitch-cap">${p.positions.join(' / ')} zone</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="verdict-block"><div class="eb2">Scout verdict</div><p>${esc(p.verdict)}</p></div>
+    <div class="block"><div class="eb2">Profile and role</div><p class="lede">${esc(p.role)}</p></div>
+    <div class="block">
+      <div class="eb2">Statistical profile</div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;margin-bottom:16px;">
+        <div style="flex:0 0 220px;">${radarChart(p.percentiles)}</div>
+        <div style="flex:1;min-width:200px;">
+          <h3 class="bt">Percentile rank (per 90, vs peers)</h3>
+          <div class="legend">
+            <span><i style="background:#1565C0"></i>Elite (&ge;80th)</span>
+            <span><i style="background:#822D3A"></i>Solid (50&ndash;79th)</span>
+            <span><i style="background:#A0968C"></i>Work-on (&lt;50th)</span>
+          </div>
+          ${bars}${rateHTML}
+          <p class="note">${esc(p.percentileNote)}</p>
+        </div>
+      </div>
+    </div>
+    <div class="block"><div class="cols">${listBlock('s','Strengths',p.strengths)}${listBlock('w','Development areas',p.weaknesses)}</div></div>
+    <div class="block"><div class="callout"><div class="eb2">Context</div><h3 class="bt" style="font-size:13px;">${esc(p.callout.title)}</h3><p>${esc(p.callout.body)}</p></div></div>
+    <div class="block"><div class="eb2">Outlook</div><h3 class="bt" style="font-size:13px;">${esc(p.projection.title)}</h3><p class="lede">${esc(p.projection.body)}</p></div>
+    <div class="foot-r">
+      <p class="method">Method: data narrows the search and the eye decides. Percentiles flag where to look; judgement weighs level, age and role.</p>
+      <div class="fr">
+        <span><b>Sources:</b> ${p.sources.map(esc).join(' &middot; ')}</span>
+        <span><b>Compiled:</b> ${esc(p.generated)}</span>
+      </div>
+      <button onclick="copyLink('${p.id}')" style="background:none;border:1px solid #E7DFE2;border-radius:20px;padding:5px 12px;font-size:11px;color:var(--muted);cursor:pointer;margin-top:8px;">Copy report link</button>
+    </div>`;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{el.querySelectorAll('.fill,.rate-fill').forEach(f=>f.style.width=f.dataset.w+'%');}));
+}
+
+/* ══ NAVIGATION ══ */
+function showReport(id,origin){
+  const p=REPORTS.find(r=>r.id===id);
+  if(!p)return;
+  currentReportId=id;
+  reportOrigin=origin||'board';
+  document.getElementById('backBtn').textContent=origin==='worldcup'?'\u2190 Back to World Cup':'\u2190 Back to Board';
+  renderReport(p);
+  document.getElementById('boardView').classList.add('hidden');
+  document.getElementById('worldCupView').classList.add('hidden');
+  document.getElementById('reportView').classList.remove('hidden');
+  history.pushState(null,'','#'+id);
+  window.scrollTo(0,0);
+}
+function goBack(){
+  history.pushState(null,'',window.location.pathname);
+  document.getElementById('reportView').classList.add('hidden');
+  if(reportOrigin==='worldcup')showWorldCup(); else showBoard();
+  window.scrollTo(0,0);
+}
+function showWorldCup(){
+  document.getElementById('boardView').classList.add('hidden');
+  document.getElementById('reportView').classList.add('hidden');
+  document.getElementById('worldCupView').classList.remove('hidden');
+  renderWorldCupBoard();window.scrollTo(0,0);
+}
+function showBoard(){
+  document.getElementById('worldCupView').classList.add('hidden');
+  document.getElementById('reportView').classList.add('hidden');
+  document.getElementById('boardView').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+/* ══ COMPARE ══ */
+function openCompareSearch(){
+  filterCompareList('');
+  document.getElementById('compareSearchInput').value='';
+  document.getElementById('compareOverlay').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('compareSearchInput').focus(),80);
+}
+function closeCompareSearch(e){
+  if(e&&e.target!==document.getElementById('compareOverlay'))return;
+  document.getElementById('compareOverlay').classList.add('hidden');
+}
+function filterCompareList(query){
+  const q=query.toLowerCase().trim();
+  const pool=REPORTS.filter(r=>r.id!==currentReportId);
+  const results=q?pool.filter(r=>r.name.toLowerCase().includes(q)||r.club.toLowerCase().includes(q)||r.posGroup.toLowerCase().includes(q)):pool;
+  const el=document.getElementById('compareResults');
+  if(!results.length){el.innerHTML=`<div class="compare-empty">No players found.</div>`;return;}
+  el.innerHTML=results.map(p=>`<div class="compare-result-item" onclick="runComparison('${currentReportId}','${p.id}')"><div class="compare-result-dot" style="background:${p.theme.claret}">${p.number||''}</div><div><div class="compare-result-name">${esc(p.name)}</div><div class="compare-result-sub">${esc(p.club)} &middot; ${esc(p.posGroup)}</div></div></div>`).join('');
+}
+function runComparison(id1,id2){
+  document.getElementById('compareOverlay').classList.add('hidden');
+  const p1=REPORTS.find(r=>r.id===id1),p2=REPORTS.find(r=>r.id===id2);
+  if(!p1||!p2)return;
+  function getMet(p){
+    if(p.universalMetrics){const L={goalInvolvement:'Goal Involvement',progressiveActions:'Progressive Actions',duelWins:'Duels Won',xGxA:'xG + xA',shots:'Shots',distance:'Distance'};return Object.entries(p.universalMetrics).filter(([,v])=>v&&v.pct>0).map(([k,v])=>({label:L[k]||k,per90:v.value,pct:v.pct}));}
+    return p.percentiles;
+  }
+  const m1=getMet(p1),m2=getMet(p2);
+  const uniMode=p1.universalMetrics&&p2.universalMetrics;
+  function col(p,metrics){
+    const bars=metrics.map(m=>`<div style="margin:10px 0;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span style="font-weight:600;">${esc(m.label)}</span><span style="font-family:monospace;font-weight:700;color:#1565C0;">${m.pct}th</span></div><div style="background:#EFEAEC;border-radius:3px;height:12px;overflow:hidden;"><div style="width:${m.pct}%;height:12px;border-radius:3px;background:${tier(m.pct)};"></div></div><div style="font-size:10px;color:#9E9E9E;margin-top:2px;">${m.per90} per 90</div></div>`).join('');
+    return `<div style="flex:1;min-width:260px;background:#fff;border-radius:8px;padding:18px;border:1px solid #E5E0E6;"><div style="background:${p.theme.claret};color:#fff;padding:12px 16px;border-radius:6px;margin-bottom:16px;"><div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;opacity:.8;">${esc(p.club)}</div><div style="font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;text-transform:uppercase;line-height:1.1;">${esc(p.name)}</div><div style="font-size:11px;opacity:.85;margin-top:4px;">${esc(p.meta.Position)} &middot; Age ${esc(p.meta.Age)}</div></div>${bars}<button onclick="showReport('${p.id}','board')" style="width:100%;margin-top:12px;padding:9px;background:${p.theme.claret};color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;">Open Full Report</button></div>`;
+  }
+  document.getElementById('report').innerHTML=`<div style="padding:20px 20px 28px;"><div style="margin-bottom:18px;"><div style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#7C7682;margin-bottom:4px;">Side by side</div><h2 style="font-family:'Oswald',sans-serif;font-size:30px;text-transform:uppercase;margin:0;">Comparison</h2><p style="color:#7C7682;font-size:13px;margin:6px 0 0;">${uniMode?'Universal metrics — standardised across positions.':'Position-specific percentile ranks. All values are 0-100.'}</p></div><div style="display:flex;gap:16px;flex-wrap:wrap;">${col(p1,m1)}${col(p2,m2)}</div></div>`;
+  document.getElementById('boardView').classList.add('hidden');
+  document.getElementById('reportView').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+/* ══ SEARCH ══ */
+function handleSearch(q){searchQuery=q.toLowerCase().trim();renderBoard();}
+
+/* ══ SHAREABLE LINKS ══ */
+function copyLink(id){
+  const url=window.location.origin+window.location.pathname+'#'+id;
+  navigator.clipboard.writeText(url).then(()=>alert('Link copied: '+url));
+}
+
+/* ══ SUBSCRIBE ══ */
+async function subscribe(){
+  const email=document.getElementById('subEmail').value.trim();
+  const name=document.getElementById('subName').value.trim();
+  if(!email||!email.includes('@')){document.getElementById('subMsg').textContent='Please enter a valid email address.';return;}
+  if(!hubSb){document.getElementById('subMsg').textContent='Subscribe feature not yet configured.';return;}
+  const{error}=await hubSb.from('subscribers').insert({email,name});
+  if(error&&error.code==='23505'){document.getElementById('subMsg').textContent='You are already subscribed.';}
+  else if(error){document.getElementById('subMsg').textContent='Something went wrong. Please try again.';}
+  else{document.getElementById('subForm').style.display='none';document.getElementById('subMsg').textContent='Subscribed. You will hear from us when the next report drops.';}
+}
+
+/* ══ INIT ══ */
+renderMast();
+renderMainFilters();
+renderBoard();
+if(window.location.hash){const hid=window.location.hash.replace('#','');const hp=REPORTS.find(r=>r.id===hid);if(hp)showReport(hid,'board');}
+</script>
+</body>
+</html>
